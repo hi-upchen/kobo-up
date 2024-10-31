@@ -34,3 +34,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Thank You
+
+* Special thanks to [mollykannn/kobo-book-exporter-go](https://github.com/mollykannn/kobo-book-exporter-go/tree/main) for providing the tools to export Kobo Book Highlights and Book Lists in various formats.
+* Also thank you to [karlicoss/kobuddy: Kobo database backup and parser: extracts notes, highlights, reading progress and more](https://github.com/karlicoss/kobuddy)
