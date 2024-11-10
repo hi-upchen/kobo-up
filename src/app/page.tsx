@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, saveKoboDbToLocal, getKoboDbFromLocal, IBook } from "@/models/KoboDB";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/table'
 
-import { SqlJsStatic } from 'sql.js';
+import { Database } from 'sql.js';
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
 import { Strong, Text } from '@/components/text'
 import { Badge } from '@/components/badge'
 
-import { ExclamationTriangleIcon } from '@heroicons/react/20/solid'
 import FAQ from '@/app/components/FAQ';
 import Steps from '@/app/components/Steps';
+
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -31,7 +31,7 @@ const ChooseKoboSqlitePage = () => {
   }, []);
 
   // process book list
-  const processBookList = async (db: SqlJsStatic.Database) => {
+  const processBookList = async (db: Database) => {
     const bookList = await getBookList(db);
 
     const booksWithNotes = await Promise.all(bookList.map(async (book) => {

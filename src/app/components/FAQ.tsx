@@ -1,6 +1,6 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import { MinusSmallIcon, PlusSmallIcon } from '@heroicons/react/24/outline'
-import { Strong, Text, TextLink } from '@/components/text'
+import { Text } from '@/components/text'
 import { Heading } from '@/components/heading'
 
 const faqs = [

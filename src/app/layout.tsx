@@ -1,5 +1,5 @@
-import { Navbar, NavbarDivider, NavbarItem, NavbarLabel, NavbarSection, NavbarSpacer } from '@/components/navbar'
-import { Sidebar, SidebarBody, SidebarHeader, SidebarItem, SidebarLabel, SidebarSection } from '@/components/sidebar'
+import { Navbar } from '@/components/navbar'
+import { Sidebar } from '@/components/sidebar'
 import { StackedLayout } from '@/components/stacked-layout'
 import Footer from '@/app/components/Footer';
 import "./globals.css";

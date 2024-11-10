@@ -1,4 +1,4 @@
-import initSqlJs, { SqlJsStatic } from 'sql.js';
+import initSqlJs, { Database, QueryExecResult, SqlValue } from 'sql.js';
 
 async function findFileHandle(directoryHandle: FileSystemDirectoryHandle, fileName: string): Promise<FileSystemFileHandle | null> {
   for await (const entry of directoryHandle.values()) {
@@ -56,12 +56,10 @@ export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
  * @returns {Promise<SQL.Database>} A promise that resolves to an initialized SQL.js database instance.
  * @throws {Error} If the Kobo database file is not found in the provided directory.
  */
-export async function connKoboDB(dbFileHandle: FileSystemFileHandle|File): Promise<SqlJsStatic.Database> {
+export async function connKoboDB(dbFileHandle: FileSystemFileHandle|File): Promise<Database> {
   if (!dbFileHandle) {
     throw new Error("dbFileHandle is null");
   }
-
-  const startTime = performance.now();
 
   const fileHandle = dbFileHandle;
   let file: File;
@@ -80,9 +78,6 @@ export async function connKoboDB(dbFileHandle: FileSystemFileHandle|File): Promi
   });
   const db = new SQL.Database(new Uint8Array(arrayBuffer));
 
-  const endTime = performance.now();
-  // console.log(`Time spent on connKoboDB: ${endTime - startTime} ms`);
-
   return db;
 }
 
@@ -92,10 +87,10 @@ export async function connKoboDB(dbFileHandle: FileSystemFileHandle|File): Promi
  * This function verifies the presence of the "content" and "bookmark" tables
  * in the provided database connection.
  *
- * @param {SqlJsStatic.Database} db - The database connection to check.
+ * @param {Database} db - The database connection to check.
  * @returns {Promise<boolean>} A promise that resolves to true if both tables are present, otherwise false.
  */
-export async function checkIsKoboDB(db: SqlJsStatic.Database): Promise<boolean> {
+export async function checkIsKoboDB(db: Database): Promise<boolean> {
   const tablesQuery = `
     SELECT name 
     FROM sqlite_master 
@@ -107,7 +102,7 @@ export async function checkIsKoboDB(db: SqlJsStatic.Database): Promise<boolean> 
   return tableNames.includes('content') && tableNames.includes('Bookmark');
 }
 
-export async function getBookList(db: SqlJsStatic.Database): Promise<IBook[]> {
+export async function getBookList(db: Database): Promise<IBook[]> {
   const sql = `
     SELECT
       ContentID as 'contentId',
@@ -130,10 +125,10 @@ export async function getBookList(db: SqlJsStatic.Database): Promise<IBook[]> {
   const query = sql;
   const result = db.exec(query);
 
-  return sqliteResultToArray(result) as IBook[];
+  return sqliteResultToArray(result) as unknown as IBook[];
 }
 
-export async function getBook(db:SqlJsStatic.Database, contentId: string): Promise<IBook> {
+export async function getBook(db:Database, contentId: string): Promise<IBook> {
   const sql = `
     SELECT
      ContentID as 'contentId',
@@ -154,10 +149,10 @@ export async function getBook(db:SqlJsStatic.Database, contentId: string): Promi
     WHERE ContentID = ?;
   `;
   const result = db.exec(sql, [contentId]);
-  return sqliteResultToArray(result)[0] as IBook;
+  return sqliteResultToArray(result)[0] as unknown as IBook;
 }
 
-export async function getHighlightNAnnotationList(db: SqlJsStatic.Database, contentId: string): Promise<IBookHighlightNAnnotation[]> {
+export async function getHighlightNAnnotationList(db: Database, contentId: string): Promise<IBookHighlightNAnnotation[]> {
   const sql = `
     SELECT
       T.BookmarkID as 'bookmarkId',
@@ -175,7 +170,7 @@ export async function getHighlightNAnnotationList(db: SqlJsStatic.Database, cont
   `;
 
   const result = db.exec(sql, [contentId]);
-  return sqliteResultToArray(result) as IBookHighlightNAnnotation[];
+  return sqliteResultToArray(result) as unknown as IBookHighlightNAnnotation[];
 }
 
 /**
@@ -184,103 +179,26 @@ export async function getHighlightNAnnotationList(db: SqlJsStatic.Database, cont
  * @param result - The result from the SQLite query execution.
  * @returns An array of objects representing the rows of the query result.
  */
-function sqliteResultToArray(result: any): { [key: string]: any }[] {
+function sqliteResultToArray(result: QueryExecResult[]): { [key: string]: SqlValue }[] {
   if (result.length === 0) return [];
 
-  return result[0].values.map((row: any[]) => {
-    const rowObject: { [key: string]: any } = {};
+  return result[0].values.map((row: SqlValue[]) => {
+    const rowObject: { [key: string]: SqlValue } = {};
     result[0].columns.forEach((col: string, index: number) => {
-      rowObject[col] = row[index];
+      rowObject[col] = row[index]
     });
     return rowObject;
   });
 }
 
+const indexedDBVersion = Math.floor(new Date().getTime() / 1000)-1731204930;
+const dbName = 'KoboNoteUp';
+const dbObjectsStoreName = 'KoboNoteUpObjects';
+
 const dbObjectKey = 'KoboReader.sqlite';
 const dbLastUpdatedKey = 'dbLastUpdated';
-const cacheName = 'KoboNoteUpCache';
 
-// /**
-//  * Save the Kobo DB file to the Cache API.
-//  *
-//  * @param dbFileHandle - The file handle for the Kobo DB file.
-//  */
-// export async function saveKoboDbToLocal(dbFileHandle: FileSystemFileHandle) {
-//   if (!dbFileHandle || dbFileHandle.kind !== 'file') {
-//     throw new Error("Invalid dbFileHandle: must be a non-null FileSystemFileHandle of kind 'file'");
-//   }
 
-//   // Get the file from the file handle
-//   const file = await dbFileHandle.getFile();
-//   const arrayBuffer = await file.arrayBuffer();
-
-//   // Create a response object from the array buffer
-//   const response = new Response(arrayBuffer, {
-//     headers: { 'Content-Type': 'application/vnd.sqlite3' }
-//   });
-
-//   // Open the cache and store the response
-//   const cache = await caches.open(cacheName);
-//   await cache.put(dbObjectKey, response);
-//   await cache.put(dbLastUpdatedKey, new Response(new Date().toISOString()));
-
-//   // Retrieve and log the saved file from the cache
-//   const cachedResponse = await cache.match(dbObjectKey);
-//   if (cachedResponse) {
-//     const cachedArrayBuffer = await cachedResponse.arrayBuffer();
-//     console.log('Cached file content:', new Uint8Array(cachedArrayBuffer));
-//   } else {
-//     console.log('No file found in cache');
-//   }
-
-//   console.log('File saved to cache successfully');
-// }
-
-// /**
-//  * Load the Kobo DB file from the Cache API.
-//  *
-//  * @returns The file object for the Kobo DB file.
-//  */
-// export async function getKoboDbFromLocal(): Promise<File | null> {
-//   const cache = await caches.open(cacheName);
-//   const response = await cache.match(dbObjectKey);
-
-//   if (!response) {
-//     console.log('No cached file found');
-//     return null;
-//   }
-
-//   const arrayBuffer = await response.arrayBuffer();
-//   const file = new File([arrayBuffer], dbObjectKey, { type: 'application/vnd.sqlite3' });
-
-//   console.log('File loaded from cache successfully');
-//   return file;
-// }
-
-// /**
-//  * Request a file handle from the user.
-//  *
-//  * @returns The file handle for the selected file.
-//  */
-// export async function requestFileHandle(): Promise<FileSystemFileHandle> {
-//   const options = {
-//     types: [
-//       {
-//         description: 'SQLite Database',
-//         accept: {
-//           'application/vnd.sqlite3': ['.sqlite', '.db'],
-//         },
-//       },
-//     ],
-//   };
-
-//   const [fileHandle] = await window.showOpenFilePicker(options);
-//   return fileHandle;
-// }
-
-const indexedDBVersion = Math.floor(new Date().getTime() / 1000)-1731204930;
-const DBName = 'KoboNoteUp';
-const DBObjectsStoreName = 'KoboNoteUpObjects';
 
 /**
  * Opens an IndexedDB database and returns a promise that resolves with the database instance.
@@ -300,13 +218,13 @@ const DBObjectsStoreName = 'KoboNoteUpObjects';
  */
 async function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const dbOpenRequest: IDBOpenDBRequest = indexedDB.open(DBName, indexedDBVersion);
+    const dbOpenRequest: IDBOpenDBRequest = indexedDB.open(dbName, indexedDBVersion);
 
-    dbOpenRequest.onupgradeneeded = (event) => {
+    dbOpenRequest.onupgradeneeded = () => {
       const db = dbOpenRequest.result;
-      if (!db.objectStoreNames.contains(DBObjectsStoreName)) {
-        db.createObjectStore(DBObjectsStoreName);
-        console.log(`Object store ${DBObjectsStoreName} created`);
+      if (!db.objectStoreNames.contains(dbObjectsStoreName)) {
+        db.createObjectStore(dbObjectsStoreName);
+        console.log(`Object store ${dbObjectsStoreName} created`);
       }
     };
 
@@ -333,8 +251,8 @@ export async function saveKoboDbToLocal(dbFileHandle: FileSystemFileHandle) {
   const db = await openIndexedDB();
 
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(DBObjectsStoreName, 'readwrite');
-    const store = transaction.objectStore(DBObjectsStoreName);
+    const transaction = db.transaction(dbObjectsStoreName, 'readwrite');
+    const store = transaction.objectStore(dbObjectsStoreName);
 
     store.put(arrayBuffer, dbObjectKey);
     store.put(new Date().toISOString(), dbLastUpdatedKey);
@@ -353,14 +271,14 @@ export async function getKoboDbFromLocal(): Promise<File | null> {
   const db = await openIndexedDB();
 
   return new Promise<File | null>((resolve, reject) => {
-    if (!db.objectStoreNames.contains(DBObjectsStoreName)) {
-      console.warn(`Object store ${DBObjectsStoreName} does not exist`);
+    if (!db.objectStoreNames.contains(dbObjectsStoreName)) {
+      console.warn(`Object store ${dbObjectsStoreName} does not exist`);
       resolve(null);
       return;
     }
 
-    const transaction = db.transaction(DBObjectsStoreName, 'readonly');
-    const store = transaction.objectStore(DBObjectsStoreName);
+    const transaction = db.transaction(dbObjectsStoreName, 'readonly');
+    const store = transaction.objectStore(dbObjectsStoreName);
     const getRequest = store.get(dbObjectKey);
 
     getRequest.onsuccess = () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { useState, useEffect, useMemo } from 'react';
-import { Strong, Text, TextLink } from '@/components/text'
+import { useState, useEffect } from 'react';
+import { Strong, Text } from '@/components/text'
 import { Heading } from '@/components/heading'
 
 export default function StepsSection() {

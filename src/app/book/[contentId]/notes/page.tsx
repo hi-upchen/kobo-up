@@ -2,11 +2,11 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, getBook, getKoboDbFromLocal, IBook, IBookHighlightNAnnotation } from "@/models/KoboDB";
+import { connKoboDB, getHighlightNAnnotationList, getBook, getKoboDbFromLocal, IBook, IBookHighlightNAnnotation } from "@/models/KoboDB";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/table'
+import { Table, TableBody, TableCell, TableRow } from '@/components/table'
 import { Heading, Subheading } from '@/components/heading'
-import { Strong, Text } from '@/components/text'
+import { Text } from '@/components/text'
 
 const NotesPage = () => {
   const params = useParams();
@@ -49,7 +49,7 @@ const NotesPage = () => {
     };
 
     loadExistingDb();
-  }, []);
+  }, [contentId]);
 
   return (
     <div>
