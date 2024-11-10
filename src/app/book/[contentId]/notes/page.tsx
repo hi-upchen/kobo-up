@@ -8,12 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Heading, Subheading } from '@/components/heading'
 import { Strong, Text } from '@/components/text'
 
-import { ExclamationTriangleIcon } from '@heroicons/react/20/solid'
-import { div } from 'framer-motion/client';
-
 const NotesPage = () => {
   const params = useParams();
-  const { contentId } = params;
+  const { contentId } = params as { contentId: string };
+
   const [notes, setNotes] = useState<IBookHighlightNAnnotation[] | null>(null);
   const [book, setBook] = useState<IBook | null>(null);
 
@@ -21,27 +19,25 @@ const NotesPage = () => {
     const loadExistingDb = async () => {
       try {
         const dbFileHandle = await getKoboDbFromLocal();
+
         if (dbFileHandle) {
           const db = await connKoboDB(dbFileHandle);
-
-          // check if the contentId is valid
           const theBook = await getBook(db, contentId);
+
           if (!theBook) {
             console.error('book not found');
             // TODO: redirect to home page
+          } else {
+            // console.log('book found', theBook);
           }
           setBook(theBook);
 
           // fetch notes
-          const start = performance.now();
           const fetchedNotes = await getHighlightNAnnotationList(db, contentId);
-          const end = performance.now();
-          console.log(`Function fetchedNotes execution time: ${(end - start) / 1000} seconds`);
-
 
           // sort by chapterProgress asc
           fetchedNotes.sort((a, b) => a.chapterProgress - b.chapterProgress);
-          console.log('fetchedNotes', fetchedNotes);
+
           setNotes(fetchedNotes);
         } else {
           console.error('existing dbFileHandle not found');
@@ -52,9 +48,8 @@ const NotesPage = () => {
       }
     };
 
-    console.log('loadExistingDb, contentId:', contentId)
     loadExistingDb();
-  }, [contentId]);
+  }, []);
 
   return (
     <div>

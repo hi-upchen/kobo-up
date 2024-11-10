@@ -102,7 +102,7 @@ export async function checkIsKoboDB(db: SqlJsStatic.Database): Promise<boolean> 
     WHERE type='table';
   `;
   const result = db.exec(tablesQuery);
-  console.log('result', result)
+
   const tableNames = result[0]?.values.map(row => row[0]) || [];
   return tableNames.includes('content') && tableNames.includes('Bookmark');
 }
@@ -198,7 +198,129 @@ function sqliteResultToArray(result: any): { [key: string]: any }[] {
 
 const dbObjectKey = 'KoboReader.sqlite';
 const dbLastUpdatedKey = 'dbLastUpdated';
-let indexedDBVersion = 5;
+const cacheName = 'KoboNoteUpCache';
+
+// /**
+//  * Save the Kobo DB file to the Cache API.
+//  *
+//  * @param dbFileHandle - The file handle for the Kobo DB file.
+//  */
+// export async function saveKoboDbToLocal(dbFileHandle: FileSystemFileHandle) {
+//   if (!dbFileHandle || dbFileHandle.kind !== 'file') {
+//     throw new Error("Invalid dbFileHandle: must be a non-null FileSystemFileHandle of kind 'file'");
+//   }
+
+//   // Get the file from the file handle
+//   const file = await dbFileHandle.getFile();
+//   const arrayBuffer = await file.arrayBuffer();
+
+//   // Create a response object from the array buffer
+//   const response = new Response(arrayBuffer, {
+//     headers: { 'Content-Type': 'application/vnd.sqlite3' }
+//   });
+
+//   // Open the cache and store the response
+//   const cache = await caches.open(cacheName);
+//   await cache.put(dbObjectKey, response);
+//   await cache.put(dbLastUpdatedKey, new Response(new Date().toISOString()));
+
+//   // Retrieve and log the saved file from the cache
+//   const cachedResponse = await cache.match(dbObjectKey);
+//   if (cachedResponse) {
+//     const cachedArrayBuffer = await cachedResponse.arrayBuffer();
+//     console.log('Cached file content:', new Uint8Array(cachedArrayBuffer));
+//   } else {
+//     console.log('No file found in cache');
+//   }
+
+//   console.log('File saved to cache successfully');
+// }
+
+// /**
+//  * Load the Kobo DB file from the Cache API.
+//  *
+//  * @returns The file object for the Kobo DB file.
+//  */
+// export async function getKoboDbFromLocal(): Promise<File | null> {
+//   const cache = await caches.open(cacheName);
+//   const response = await cache.match(dbObjectKey);
+
+//   if (!response) {
+//     console.log('No cached file found');
+//     return null;
+//   }
+
+//   const arrayBuffer = await response.arrayBuffer();
+//   const file = new File([arrayBuffer], dbObjectKey, { type: 'application/vnd.sqlite3' });
+
+//   console.log('File loaded from cache successfully');
+//   return file;
+// }
+
+// /**
+//  * Request a file handle from the user.
+//  *
+//  * @returns The file handle for the selected file.
+//  */
+// export async function requestFileHandle(): Promise<FileSystemFileHandle> {
+//   const options = {
+//     types: [
+//       {
+//         description: 'SQLite Database',
+//         accept: {
+//           'application/vnd.sqlite3': ['.sqlite', '.db'],
+//         },
+//       },
+//     ],
+//   };
+
+//   const [fileHandle] = await window.showOpenFilePicker(options);
+//   return fileHandle;
+// }
+
+const indexedDBVersion = Math.floor(new Date().getTime() / 1000)-1731204930;
+const DBName = 'KoboNoteUp';
+const DBObjectsStoreName = 'KoboNoteUpObjects';
+
+/**
+ * Opens an IndexedDB database and returns a promise that resolves with the database instance.
+ * If the database needs to be upgraded, it will create the necessary object stores.
+ *
+ * @example
+ * ```typescript
+ * try {
+ *   const db = await openIndexedDB();
+ *   console.log('Database opened:', db);
+ * } catch (error) {
+ *   console.error('Failed to open database:', error);
+ * }
+ * ```
+ *
+ * @returns {Promise<IDBDatabase>} A promise that resolves with the opened IndexedDB database instance.
+ */
+async function openIndexedDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const dbOpenRequest: IDBOpenDBRequest = indexedDB.open(DBName, indexedDBVersion);
+
+    dbOpenRequest.onupgradeneeded = (event) => {
+      const db = dbOpenRequest.result;
+      if (!db.objectStoreNames.contains(DBObjectsStoreName)) {
+        db.createObjectStore(DBObjectsStoreName);
+        console.log(`Object store ${DBObjectsStoreName} created`);
+      }
+    };
+
+    dbOpenRequest.onsuccess = () => {
+      resolve(dbOpenRequest.result);
+    };
+
+    dbOpenRequest.onerror = (event) => {
+      console.error('Database error:', (event.target as IDBOpenDBRequest).error);
+      reject(new Error('Failed to open IndexedDB'));
+    };
+  });
+}
+
 export async function saveKoboDbToLocal(dbFileHandle: FileSystemFileHandle) {
   if (!dbFileHandle || dbFileHandle.kind !== 'file') {
     throw new Error("Invalid dbFileHandle: must be a non-null FileSystemFileHandle of kind 'file'");
@@ -208,128 +330,75 @@ export async function saveKoboDbToLocal(dbFileHandle: FileSystemFileHandle) {
   const file = await dbFileHandle.getFile();
   const arrayBuffer = await file.arrayBuffer();
 
-  // saving to indexedDB
-  const dbOpenRequest: IDBOpenDBRequest = indexedDB.open('KoboUp', indexedDBVersion);
+  const db = await openIndexedDB();
 
   return new Promise<void>((resolve, reject) => {
-    dbOpenRequest.onupgradeneeded = (event) => {
-      console.log("do onupgradeneeded");
+    const transaction = db.transaction(DBObjectsStoreName, 'readwrite');
+    const store = transaction.objectStore(DBObjectsStoreName);
 
-      const db = dbOpenRequest.result;
-      // create object store if not exists
-      if (!db.objectStoreNames.contains('KoboUpObjects')) {
-        db.createObjectStore('KoboUpObjects');
-        console.log(`Object "KoboUpObjects" store created`);
-      }
+    store.put(arrayBuffer, dbObjectKey);
+    store.put(new Date().toISOString(), dbLastUpdatedKey);
+
+    transaction.oncomplete = () => {
+      resolve();
     };
 
-    dbOpenRequest.onsuccess = async () => {
-      const db = dbOpenRequest.result;
-      
-      const transaction = db.transaction('KoboUpObjects', 'readwrite');
-      const store = transaction.objectStore('KoboUpObjects');
-
-      store.put(arrayBuffer, dbObjectKey);
-      store.put(new Date().toISOString(), dbLastUpdatedKey);
-
-      transaction.oncomplete = () => {
-        console.log('Transaction completed successfully');
-        resolve();
-      };
-
-      transaction.onerror = (event) => {
-        console.error('Transaction error:', (event.target as IDBTransaction).error);
-        reject(new Error('Transaction failed'));
-      };
-    };
-
-    dbOpenRequest.onerror = (event) => {
-      console.error('Database error:', (event.target as IDBOpenDBRequest).error);
-      reject(new Error('Failed to open IndexedDB'));
+    transaction.onerror = (event) => {
+      console.error('Transaction error:', (event.target as IDBTransaction).error);
+      reject(new Error('Transaction failed'));
     };
   });
 }
-
 export async function getKoboDbFromLocal(): Promise<File | null> {
-  const startTime = performance.now();
-  const dbOpenRequest: IDBOpenDBRequest = indexedDB.open('KoboUp', indexedDBVersion);
+  const db = await openIndexedDB();
 
   return new Promise<File | null>((resolve, reject) => {
-    dbOpenRequest.onsuccess = () => {
-      const db = dbOpenRequest.result;
+    if (!db.objectStoreNames.contains(DBObjectsStoreName)) {
+      console.warn(`Object store ${DBObjectsStoreName} does not exist`);
+      resolve(null);
+      return;
+    }
 
-      if (!db.objectStoreNames.contains('KoboUpObjects')) {
-        console.warn('Object store "KoboUpObjects" does not exist');
+    const transaction = db.transaction(DBObjectsStoreName, 'readonly');
+    const store = transaction.objectStore(DBObjectsStoreName);
+    const getRequest = store.get(dbObjectKey);
+
+    getRequest.onsuccess = () => {
+      const arrayBuffer = getRequest.result;
+      if (arrayBuffer) {
+        const file = new File([arrayBuffer], dbObjectKey, { type: 'application/octet-stream' });
+        resolve(file);
+      } else {
         resolve(null);
-        return;
       }
-
-      const transaction = db.transaction('KoboUpObjects', 'readonly');
-      const store = transaction.objectStore('KoboUpObjects');
-      const getRequest = store.get(dbObjectKey);
-
-      getRequest.onsuccess = () => {
-        const arrayBuffer = getRequest.result;
-        if (arrayBuffer) {
-          const file = new File([arrayBuffer], dbObjectKey, { type: 'application/octet-stream' });
-          const endTime = performance.now();
-          // console.log(`Time spent on getKoboDbFromLocal: ${endTime - startTime} ms`);
-        
-          resolve(file);
-        } else {
-          resolve(null);
-        }
-      };
-
-      getRequest.onerror = (event) => {
-        console.error('Get request error:', (event.target as IDBRequest).error);
-        reject(new Error('Failed to retrieve the file from IndexedDB'));
-      };
     };
 
-    dbOpenRequest.onerror = (event) => {
-      console.error('Database error:', (event.target as IDBOpenDBRequest).error);
-      reject(new Error('Failed to open IndexedDB'));
+    getRequest.onerror = (event) => {
+      console.error('Get request error:', (event.target as IDBRequest).error);
+      reject(new Error('Failed to retrieve the file from IndexedDB'));
     };
   });
 }
 
 /**
- * Delete the saved Kobo DB (restart)
- * @returns Promise<null>
+ * Delete the existing IndexedDB database.
  */
-export async function resetKoboDbFromLocal(): Promise<null> {
-  return new Promise<null>((resolve, reject) => {
-    const dbOpenRequest: IDBOpenDBRequest = indexedDB.open('KoboUp', indexedDBVersion);
+export async function deleteDatabase(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deleteRequest = indexedDB.deleteDatabase('KoboNoteUp');
 
-    dbOpenRequest.onsuccess = () => {
-      const db = dbOpenRequest.result;
-
-      if (!db.objectStoreNames.contains('KoboUpObjects')) {
-        console.warn('Object store "KoboUpObjects" does not exist');
-        resolve(null);
-        return;
-      }
-
-      const transaction = db.transaction('KoboUpObjects', 'readwrite');
-      const store = transaction.objectStore('KoboUpObjects');
-
-      store.put(null, dbObjectKey);
-
-      transaction.oncomplete = () => {
-        console.log('Transaction completed successfully');
-        resolve(null);
-      };
-
-      transaction.onerror = (event) => {
-        console.error('Transaction error:', (event.target as IDBTransaction).error);
-        reject(new Error('Transaction failed'));
-      };
+    deleteRequest.onsuccess = () => {
+      console.log('Database deleted successfully');
+      resolve();
     };
 
-    dbOpenRequest.onerror = (event) => {
-      console.error('Database error:', (event.target as IDBOpenDBRequest).error);
-      reject(new Error('Failed to open IndexedDB'));
+    deleteRequest.onerror = (event) => {
+      console.error('Database deletion error:', (event.target as IDBRequest).error);
+      reject(new Error('Failed to delete IndexedDB'));
+    };
+
+    deleteRequest.onblocked = () => {
+      console.warn('Database deletion blocked');
     };
   });
 }
