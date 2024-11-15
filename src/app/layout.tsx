@@ -1,3 +1,5 @@
+import { GoogleTagManager } from '@next/third-parties/google' 
+
 import { Navbar } from '@/components/navbar'
 import { Sidebar } from '@/components/sidebar'
 import { StackedLayout } from '@/components/stacked-layout'
@@ -12,8 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
+      <GoogleTagManager gtmId="GTM-M82SLQZ6" />
+
       <body className="">
-        
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82SLQZ6" height="0" width="0" style={{ display: "none", visibility: "hidden" }}></iframe></noscript>
+
         <StackedLayout
           navbar={<Navbar>{/* Your navbar content */}</Navbar>}
           sidebar={<Sidebar>{/* Your sidebar content */}</Sidebar>}
