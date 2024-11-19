@@ -165,7 +165,7 @@ const ChooseKoboSqlitePage = () => {
               </TableHead>
               <TableBody>
                 {bookList.map((theBook) => (
-                  <TableRow key={theBook.contentId} href={`/book/${theBook.contentId}/notes`} className='hover:bg-zinc-950/5 dark:hover:bg-white/5'>
+                  <TableRow key={theBook.contentId} href={`/book/${encodeURIComponent(theBook.contentId)}/notes`} className='hover:bg-zinc-950/5 dark:hover:bg-white/5'>
                     <TableCell className="font-medium text-wrap ">
                       <Heading level={2} className='text-lg font-bold '>{theBook.bookTitle}</Heading>
                       {theBook.subtitle && <Text className='text-sm'>{theBook.subtitle}</Text>}

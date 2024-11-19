@@ -10,7 +10,12 @@ import { Text } from '@/components/text'
 
 const NotesPage = () => {
   const params = useParams();
-  const { contentId } = params as { contentId: string };
+  let { contentId } = params as { contentId: string };
+
+  if (contentId) {
+    contentId = decodeURIComponent(contentId);
+  }
+
 
   const [notes, setNotes] = useState<IBookHighlightNAnnotation[] | null>(null);
   const [book, setBook] = useState<IBook | null>(null);
@@ -36,7 +41,14 @@ const NotesPage = () => {
           const fetchedNotes = await getHighlightNAnnotationList(db, contentId);
 
           // sort by chapterProgress asc
-          fetchedNotes.sort((a, b) => a.chapterProgress - b.chapterProgress);
+          fetchedNotes.sort((a, b) => {
+            if (a.chapterProgress === b.chapterProgress) {
+              return new Date(a.dateCreated).getTime() - new Date(b.dateCreated).getTime();
+            }
+            return a.chapterProgress - b.chapterProgress;
+          });
+
+          
 
           setNotes(fetchedNotes);
         } else {
