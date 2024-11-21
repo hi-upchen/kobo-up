@@ -102,6 +102,53 @@ export async function checkIsKoboDB(db: Database): Promise<boolean> {
   return tableNames.includes('content') && tableNames.includes('Bookmark');
 }
 
+/**
+ * Fetch the Kobo User Identity details from the SQLite database.
+ * @param db SQLite database connection
+ * @returns KoboUserDetails object or null if no user details found
+ */
+export async function getUserDetails(db: Database): Promise<null|KoboUserDetails> {
+  const sql = `
+    SELECT
+      UserID as 'userId',
+      UserKey as 'userKey',
+      UserDisplayName as 'userDisplayName',
+      UserEmail as 'userEmail',
+      ___DeviceID as 'deviceId',
+      FacebookAuthToken as 'facebookAuthToken',
+      HasMadePurchase as 'hasMadePurchase',
+      IsOneStoreAccount as 'isOneStoreAccount',
+      IsChildAccount as 'isChildAccount',
+      RefreshToken as 'refreshToken',
+      AuthToken as 'authToken',
+      AuthType as 'authType',
+      Loyalty as 'loyalty',
+      IsLibraryMigrated as 'isLibraryMigrated',
+      SyncContinuationToken as 'syncContinuationToken',
+      Subscription as 'subscription',
+      LibrarySyncType as 'librarySyncType',
+      LibrarySyncTime as 'librarySyncTime',
+      SyncTokenAppVersion as 'syncTokenAppVersion',
+      Storefront as 'storefront',
+      NewUserPromoCurrency as 'newUserPromoCurrency',
+      NewUserPromoValue as 'newUserPromoValue',
+      KoboAccessToken as 'koboAccessToken',
+      KoboAccessTokenExpiry as 'koboAccessTokenExpiry',
+      AnnotationsSyncToken as 'annotationsSyncToken',
+      PrivacyPermissions as 'privacyPermissions',
+      AnnotationsMigrated as 'annotationsMigrated',
+      NotebookSyncTime as 'notebookSyncTime',
+      NotebookSyncToken as 'notebookSyncToken'
+    FROM user;
+  `;
+  const result = db.exec(sql);
+  if (result.length === 0) return null;
+
+  const rows = sqliteResultToArray(result);
+  return rows.length > 0 ? 
+    rows[0] as unknown as KoboUserDetails : null;
+}
+
 export async function getBookList(db: Database): Promise<IBook[]> {
   const sql = `
     SELECT
@@ -357,4 +404,36 @@ export interface IBookHighlightNAnnotation {
   text: string;
   type: string; //"highlight"
   volumeId: string;
+}
+
+export interface KoboUserDetails {
+  userId: string; // c0f36858-xxxx-xxxx-xxxx-7afe64ed50ee
+  userKey: string; // b0d10696-xxxx-xxxx-xxxx-18e4c5b59609
+  userDisplayName: string; // xxxx@gmail.com
+  userEmail: string | null;
+  deviceId: string | null; // f49a2dcf56c785384d35f4e3323ee07fe48977e855d423acc04455af4xxxxxx
+  facebookAuthToken: string | null;
+  hasMadePurchase: boolean | null;
+  isOneStoreAccount: boolean | null;
+  isChildAccount: boolean | null;
+  refreshToken: string | null;
+  authToken: string | null;
+  authType: string | null;
+  loyalty: boolean | null;
+  isLibraryMigrated: boolean | null;
+  syncContinuationToken: string | null;
+  subscription: string | null;
+  librarySyncType: string | null;
+  librarySyncTime: string | null;
+  syncTokenAppVersion: string | null;
+  storefront: string | null;
+  newUserPromoCurrency: string | null;
+  newUserPromoValue: string | null;
+  koboAccessToken: string | null;
+  koboAccessTokenExpiry: string | null;
+  annotationsSyncToken: string | null;
+  privacyPermissions: boolean | null;
+  annotationsMigrated: boolean | null;
+  notebookSyncTime: string | null;
+  notebookSyncToken: string | null;
 }

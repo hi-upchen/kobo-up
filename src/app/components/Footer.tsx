@@ -2,6 +2,7 @@
 
 // components/Footer.tsx
 import { deleteDatabase } from "@/models/KoboDB";
+import { pushToDataLayer } from '@/utils/gtm';
 
 const Footer = () => {
   return (
@@ -43,6 +44,7 @@ const Footer = () => {
           type="button"
           title="Clear Saved Kobo DB"
           onClick={() => {
+            pushToDataLayer({ event: 'clear_kobo_db' });
             deleteDatabase();
             window.location.href = "/";
           }} >

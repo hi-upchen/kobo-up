@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, saveKoboDbToLocal, getKoboDbFromLocal, IBook } from "@/models/KoboDB";
+import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, saveKoboDbToLocal, getKoboDbFromLocal, getUserDetails, IBook } from "@/models/KoboDB";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/table'
 
 import { Database } from 'sql.js';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/badge'
 
 import FAQ from '@/app/components/FAQ';
 import Steps from '@/app/components/Steps';
+import { pushToDataLayer } from '@/utils/gtm';
 
 
 const formatDate = (dateString: string) => {
@@ -59,6 +60,18 @@ const ChooseKoboSqlitePage = () => {
           const booksWithNotes = await processBookList(db);
 
           setBookList(booksWithNotes);
+
+          pushToDataLayer({ 
+            event: 'load_existing_kobodb'
+          });
+
+          const koboUser = await getUserDetails(db);
+          if (koboUser) {
+            pushToDataLayer({ 
+              event: 'identify_user',
+              kobo_user_id: koboUser.userId,
+            });  
+          }
         } else {
           setBookList(null); // no kobo database is found
         }
@@ -75,6 +88,11 @@ const ChooseKoboSqlitePage = () => {
     try {
       const directoryHandle = await window.showDirectoryPicker();
       const dbFileHandle: FileSystemFileHandle | null = await findKoboDB(directoryHandle);
+      const isNewDB = bookList === null
+
+      pushToDataLayer({ 
+        event: 'upload_kobodb'
+      });
 
       if (!dbFileHandle) {
         throw new Error("Kobo database not found");
@@ -91,12 +109,25 @@ const ChooseKoboSqlitePage = () => {
       const booksWithNotes = await processBookList(db);
       
       setBookList(booksWithNotes);
+
+      const koboUser = await getUserDetails(db);
+      if (koboUser) {
+        if (isNewDB) {
+          pushToDataLayer({ 
+            event: 'set_user_alias',
+            kobo_user_id: koboUser.userId,
+          });
+        }
+
+        pushToDataLayer({ 
+          event: 'identify_user',
+          kobo_user_id: koboUser.userId,
+        });  
+      }
     } catch (error) {
       console.error('Error accessing directory:', error);
     }
   };
-
-
 
   return (
     <div>
