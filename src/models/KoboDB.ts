@@ -23,7 +23,13 @@ async function findFileHandle(directoryHandle: FileSystemDirectoryHandle, fileNa
  */
 export async function findKoboDB(directoryHandle: FileSystemDirectoryHandle): Promise<FileSystemFileHandle | null> {
   const fileName = 'KoboReader.sqlite';
-  const found = await findFileHandle(directoryHandle, fileName);
+  let found = await findFileHandle(directoryHandle, fileName);
+
+  if (!found) {
+    const alternativeFileName = 'Kobo.sqlite';
+    found = await findFileHandle(directoryHandle, alternativeFileName);
+  }
+
   return found;
 }
 
@@ -56,7 +62,7 @@ export async function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
  * @returns {Promise<SQL.Database>} A promise that resolves to an initialized SQL.js database instance.
  * @throws {Error} If the Kobo database file is not found in the provided directory.
  */
-export async function connKoboDB(dbFileHandle: FileSystemFileHandle|File): Promise<Database> {
+export async function connKoboDB(dbFileHandle: FileSystemFileHandle | File): Promise<Database> {
   if (!dbFileHandle) {
     throw new Error("dbFileHandle is null");
   }
@@ -107,7 +113,7 @@ export async function checkIsKoboDB(db: Database): Promise<boolean> {
  * @param db SQLite database connection
  * @returns KoboUserDetails object or null if no user details found
  */
-export async function getUserDetails(db: Database): Promise<null|KoboUserDetails> {
+export async function getUserDetails(db: Database): Promise<null | KoboUserDetails> {
   const sql = `
     SELECT
       UserID as 'userId',
@@ -145,7 +151,7 @@ export async function getUserDetails(db: Database): Promise<null|KoboUserDetails
   if (result.length === 0) return null;
 
   const rows = sqliteResultToArray(result);
-  return rows.length > 0 ? 
+  return rows.length > 0 ?
     rows[0] as unknown as KoboUserDetails : null;
 }
 
@@ -175,7 +181,7 @@ export async function getBookList(db: Database): Promise<IBook[]> {
   return sqliteResultToArray(result) as unknown as IBook[];
 }
 
-export async function getBook(db:Database, contentId: string): Promise<IBook> {
+export async function getBook(db: Database, contentId: string): Promise<IBook> {
   const sql = `
     SELECT
      ContentID as 'contentId',
@@ -210,7 +216,9 @@ export async function getHighlightNAnnotationList(db: Database, contentId: strin
       T.Annotation as 'annotation',
       T.Hidden as 'hidden',
       T.Type as 'type',
-      T.ChapterProgress as 'chapterProgress'
+      T.ChapterProgress as 'chapterProgress',
+      T.StartOffset as 'startOffset',
+      T.StartContainerPath as 'startContainerPath'
     FROM content AS B, Bookmark AS T
     WHERE B.ContentID = T.VolumeID AND T.Text != '' AND T.Hidden = 'false' AND B.ContentID = ?
     ORDER BY T.DateCreated DESC;
@@ -218,6 +226,92 @@ export async function getHighlightNAnnotationList(db: Database, contentId: strin
 
   const result = db.exec(sql, [contentId]);
   return sqliteResultToArray(result) as unknown as IBookHighlightNAnnotation[];
+}
+
+/**
+ * Fetches the chapters of a book from the Kobo database.
+ * 
+ * @param db - The Kobo database connection.
+ * @param contentId - The content ID of the book.
+ * @returns An array of book chapters.
+ */
+export async function getBookChapters(db: Database, contentId: string): Promise<IBookChapter[]> {
+  const sql = `
+    SELECT
+      ContentID as 'contentId',
+      ContentType as 'contentType',
+      MimeType as 'mimeType',
+      BookID as 'bookId',
+      BookTitle as 'bookTitle',
+      ImageId as 'imageId',
+      Title as 'title',
+      ChapterIDBookmarked as 'chapterIdBookmarked',
+      VolumeIndex as 'volumeIndex',
+      Depth as 'depth',
+      ISBN as 'isbn'
+    FROM content
+    WHERE 
+      (contentType = 899 OR
+      contentType = 9) AND
+      BookID = ?
+    ORDER BY volumeIndex ASC;
+  `;
+
+  const result = db.exec(sql, [contentId]);
+  const chapters = sqliteResultToArray(result);
+
+  // convert contentType to number
+  chapters.forEach(chapter => {
+    if (typeof chapter.contentType === 'string') {
+      chapter.contentType = parseInt(chapter.contentType, 10);
+    }
+  });
+
+  // return only chapters with contentType 899 if 899 chapters exist
+  const hasContentType899 = chapters.some(chapter => chapter.contentType === 899);
+  return hasContentType899 ?
+    chapters.filter(chapter => chapter.contentType === 899) as unknown as IBookChapter[] :
+    chapters as unknown as IBookChapter[];
+}
+
+/**
+ * Fetches and prepares chapters and notes for a given book.
+ *
+ * @param db - The Kobo database connection.
+ * @param contentId - The content ID of the book.
+ * @returns An array of book chapters with their respective notes.
+ */
+export async function getChaptersWithNotes(db: Database, contentId: string): Promise<IBookChapter[]> {
+  // Fetch notes
+  const fetchedNotes = await getHighlightNAnnotationList(db, contentId);
+
+  // Parse book chapters
+  const thisBookChapters = await getBookChapters(db, contentId);
+
+  // Put notes into chapters
+  thisBookChapters.forEach((chapter, chapterIdx) => {
+    thisBookChapters[chapterIdx].notes = fetchedNotes
+      .filter((note) => {
+        return note.contentId === chapter.chapterIdBookmarked
+          || note.contentId === chapter.contentId;
+      })
+      .sort((a, b) => {
+        const extractNumber = (str: string) => {
+          const match = str.match(/(\d+)/);
+          return match ? parseInt(match[0], 10) : 0;
+        };
+
+        const numA = extractNumber(a.startContainerPath);
+        const numB = extractNumber(b.startContainerPath);
+
+        if (numA === numB) {
+          return a.startOffset - b.startOffset;
+        }
+        return numA - numB;
+      });
+  });
+
+  return thisBookChapters;
 }
 
 /**
@@ -238,7 +332,7 @@ function sqliteResultToArray(result: QueryExecResult[]): { [key: string]: SqlVal
   });
 }
 
-const indexedDBVersion = Math.floor(new Date().getTime() / 1000)-1731204930;
+const indexedDBVersion = Math.floor(new Date().getTime() / 1000) - 1731204930;
 const dbName = 'KoboNoteUp';
 const dbObjectsStoreName = 'KoboNoteUpObjects';
 
@@ -397,6 +491,8 @@ export interface IBook {
 export interface IBookHighlightNAnnotation {
   annotation: string | null;
   bookmarkId: string;
+  startContainerPath: string; // span#kobo\.80\.1
+  startOffset: number; // in chapter startOffset
   chapterProgress: number; // 0.1176470588235294
   contentId: string; // IBook.contentId
   dateCreated: string; // 2024-07-12T02:53:50.000
@@ -436,4 +532,21 @@ export interface KoboUserDetails {
   annotationsMigrated: boolean | null;
   notebookSyncTime: string | null;
   notebookSyncToken: string | null;
+}
+
+export interface IBookChapter {
+  notes: IBookHighlightNAnnotation[];
+  contentId: string;
+  contentType: number;
+  mimeType?: string;
+  bookId: string;
+  bookTitle: string;
+  imageId?: string;
+  title: string;
+  chapterIdBookmarked: string;
+  volumeIndex: number;
+  depth: number;
+  isbn?: string;
+
+  note?: Array<IBookHighlightNAnnotation>; // to be added later
 }
