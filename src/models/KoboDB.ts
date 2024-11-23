@@ -300,24 +300,12 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
 
   // Put notes into chapters
   thisBookChapters.forEach((chapter, chapterIdx) => {
-    let thisChapterNotes = fetchedNotes
-    .filter((note) => {
-      return note.contentId === chapter.chapterIdBookmarked
-        || note.contentId === chapter.contentId;
-    })
-    console.log('thisChapterNotes', thisChapterNotes);
-
     thisBookChapters[chapterIdx].notes = fetchedNotes
       .filter((note) => {
         return note.contentId === chapter.chapterIdBookmarked
           || note.contentId === chapter.contentId;
       })
       .sort((a, b) => {
-        const extractNumber = (str: string) => {
-          const match = str.match(/(\d+)/);
-          return match ? parseInt(match[0], 10) : 0;
-        };
-
         const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
         const bStartPath = padNumbersToThreeDigits(b.startContainerPath);
 
