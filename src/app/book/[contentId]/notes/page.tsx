@@ -99,13 +99,13 @@ const NotesPage = () => {
                 </HeadingTag>
 
                 {chapter.notes && chapter.notes.length > 0 && (
-                  <ul role="list" className="space-y-7 mt-6">
+                  <ul role="list" className="space-y-3 mt-6">
                     {chapter.notes.map((chapterNote, chapterNoteIdx) => (
                       <li key={chapterNote.bookmarkId} className="relative flex gap-x-1">
                         <div
                           className={clsx(
-                            chapterNoteIdx === chapter.notes.length - 1 ? 'h-7' : '-bottom-7',
-                            'absolute left-0 top-0 flex w-7 justify-center',
+                            chapterNoteIdx === chapter.notes.length - 1 ? 'h-8' : '-bottom-8',
+                            'absolute left-0 top-0 flex w-8 justify-center',
                           )}
                         >
                           <div className="w-px bg-lime-300 dark:bg-lime-600" />
@@ -113,7 +113,7 @@ const NotesPage = () => {
 
                         {chapterNote.text && (
                           <>
-                            <div className="relative flex size-7 flex-none items-center justify-center bg-white dark:bg-zinc-900">
+                            <div className="relative flex h-8 w-8 flex-none items-center justify-center">
                               <div className="size-1.5 rounded-full bg-lime-200 dark:bg-zinc-700 ring-1 ring-lime-600 dark:ring-lime-300" />
                             </div>
 

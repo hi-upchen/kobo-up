@@ -275,6 +275,16 @@ export async function getBookChapters(db: Database, contentId: string): Promise<
 }
 
 /**
+ * Pads numbers in a string to 3 digits.
+ *
+ * @param str - The input string containing numbers.
+ * @returns The string with numbers padded to 3 digits.
+ */
+const padNumbersToThreeDigits = (str: string): string => {
+  return str.replace(/\d+/g, (match) => match.padStart(3, '0'));
+};
+
+/**
  * Fetches and prepares chapters and notes for a given book.
  *
  * @param db - The Kobo database connection.
@@ -290,6 +300,13 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
 
   // Put notes into chapters
   thisBookChapters.forEach((chapter, chapterIdx) => {
+    let thisChapterNotes = fetchedNotes
+    .filter((note) => {
+      return note.contentId === chapter.chapterIdBookmarked
+        || note.contentId === chapter.contentId;
+    })
+    console.log('thisChapterNotes', thisChapterNotes);
+
     thisBookChapters[chapterIdx].notes = fetchedNotes
       .filter((note) => {
         return note.contentId === chapter.chapterIdBookmarked
@@ -301,13 +318,13 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
           return match ? parseInt(match[0], 10) : 0;
         };
 
-        const numA = extractNumber(a.startContainerPath);
-        const numB = extractNumber(b.startContainerPath);
+        const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
+        const bStartPath = padNumbersToThreeDigits(b.startContainerPath);
 
-        if (numA === numB) {
+        if (aStartPath === bStartPath) {
           return a.startOffset - b.startOffset;
         }
-        return numA - numB;
+        return aStartPath.localeCompare(bStartPath);
       });
   });
 
