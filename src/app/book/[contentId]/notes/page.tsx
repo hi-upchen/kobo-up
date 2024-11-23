@@ -10,7 +10,6 @@ import {
   getKoboDbFromLocal,
   IBook,
   IBookHighlightNAnnotation,
-  getBookChapters,
   getChaptersWithNotes,
   IBookChapter
 } from "@/models/KoboDB";
