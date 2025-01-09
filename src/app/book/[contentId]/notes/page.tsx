@@ -16,6 +16,55 @@ import {
 
 import { Heading, Subheading } from '@/components/heading'
 import { Text } from '@/components/text'
+import { Divider } from '@/components/divider'
+import { Dropdown, DropdownButton, DropdownItem, DropdownMenu, DropdownDescription, DropdownLabel } from '@/components/dropdown'
+
+
+const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookChapter[]) => {
+  let content = ``
+
+  content += `# ${book.bookTitle}\n`;
+  content += `## ${book.author}\n\n`;
+
+  bookChapterAndNotes.forEach((chapter) => {
+    const headingPrefix = '#'.repeat(chapter.depth);
+    content += `${headingPrefix} ${chapter.title}\n`;
+
+    if (chapter.notes && chapter.notes.length > 0) {
+      content += '\n';
+      chapter.notes.forEach((chapterNote) => {
+        if (chapterNote.text) {
+          content += `* ${chapterNote.text.replace(/\r?\n|\r/g, '').trim()}\n`;
+        }
+        if (chapterNote.annotation) {
+          content += `> ${chapterNote.annotation.replace(/\r?\n|\r/g, '\n> ').trim()}\n`;
+        }
+      });
+      content += '\n';
+    }
+  })
+  return content
+}
+
+const downloadFile = (filename: string, content: string, type: string) => {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+const downloadMarkdownFile = (filename: string, content: string) => {
+  downloadFile(filename, content, 'text/markdown');
+};
+
+const downloadTxtFile = (filename: string, content: string) => {
+  downloadFile(filename, content, 'text/plain');
+};
 
 const NotesPage = () => {
   const params = useParams();
@@ -78,11 +127,48 @@ const NotesPage = () => {
       <Heading className='text-center'>{book?.bookTitle}</Heading>
       <Subheading className='text-center mt-3 mb-12 text-zinc-500 dark:text-zinc-300'>{book?.author}</Subheading>
 
-      {notes && bookChapters && notes.length > 0 &&
-        <div className="mt-6">
+      {notes && bookChapters && notes.length > 0 && <>
+        <div className="mt-6 flex items-center mb-2">
+          <Text className='text-zinc-500 dark:text-zinc-400'>{notes.length} highlghts</Text>
+          <div className="ml-auto">
+            <Dropdown >
+              <DropdownButton outline aria-label="More options">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="size-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+              </DropdownButton>
+              <DropdownMenu anchor="bottom end">
+                <DropdownItem onClick={() => {
+                  if (!book) {
+                    console.error('Book data is not available');
+                    return;
+                  };
+                  const content = generateMarkdownContent(book, bookChapters);
+                  downloadMarkdownFile(`${book?.bookTitle}.md`, content);
+                }}>
+                  <DropdownLabel>Download as Markdown Format</DropdownLabel>
+                  <DropdownDescription>Perfect for importing into Notion.</DropdownDescription>
+                </DropdownItem>
+                <DropdownItem onClick={() => {
+                  if (!book) {
+                    console.error('Book data is not available');
+                    return;
+                  };
+                  const content = generateMarkdownContent(book, bookChapters);
+                  downloadTxtFile(`${book?.bookTitle}.txt`, content);
+                }}>
+                  <DropdownLabel>Download as TXT Format</DropdownLabel>
+                  <DropdownDescription>Plain text for quick review and sharing.</DropdownDescription>
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        </div>
+        <Divider />
+        <div className="">
           {bookChapters.map((chapter) => {
             const HeadingTag = `h${chapter.depth + 1}` as keyof JSX.IntrinsicElements;
-            
+
             return (
               <div key={chapter.contentId} className='mb-6'>
                 <HeadingTag
@@ -90,12 +176,12 @@ const NotesPage = () => {
                     chapter.depth === 1 ? 'text-xl mt-12' : '',
                     chapter.depth === 2 ? 'text-lg' : '',
                     chapter.depth === 3 ? 'text-base' : '',
-                    chapter.depth >4 ? 'text-base' : '',
+                    chapter.depth > 4 ? 'text-base' : '',
                     'text-zinc-500 dark:text-zinc-400'
                   )}
                   key={chapter.contentId}
                 >
-                    {chapter.title}
+                  {chapter.title}
                 </HeadingTag>
 
                 {chapter.notes && chapter.notes.length > 0 && (
@@ -136,7 +222,7 @@ const NotesPage = () => {
             );
           })}
         </div>
-      }
+      </>}
 
       {
         notes && notes.length === 0 &&

@@ -314,6 +314,14 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
         }
         return aStartPath.localeCompare(bStartPath);
       });
+
+    // Remove notes from fetchedNotes that have been added to thisBookChapters
+    thisBookChapters[chapterIdx].notes.forEach(note => {
+      const index = fetchedNotes.findIndex(fetchedNote => fetchedNote.bookmarkId === note.bookmarkId);
+      if (index !== -1) {
+        fetchedNotes.splice(index, 1);
+      }
+    });
   });
 
   return thisBookChapters;
