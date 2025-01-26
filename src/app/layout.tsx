@@ -1,4 +1,6 @@
 import { GoogleTagManager } from '@next/third-parties/google' 
+import { Analytics } from '@vercel/analytics/next';
+
 
 import { Navbar } from '@/components/navbar'
 import { Sidebar } from '@/components/sidebar'
@@ -25,15 +27,14 @@ export default function RootLayout({
         >
           <BackgroundShapes />
           <div className="mx-auto max-w-7xl px-0 py-2 sm:py-4 lg:px-8 lg:py-5 relative">
-            
             <div className="mx-auto max-w-4xl ">
-              
               {children}
             </div>
           </div>
 
           <Footer />
         </StackedLayout>
+        <Analytics />
       </body>
     </html>
   );
