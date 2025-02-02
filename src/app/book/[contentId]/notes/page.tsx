@@ -89,9 +89,11 @@ const NotesPage = () => {
 
           if (!theBook) {
             console.error('book not found');
-            // TODO: redirect to home page
-          } else {
-            // console.log('book found', theBook);
+            alert('Book not found. Redirecting back to home page in 3 seconds...');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 3000);
+            return;
           }
           setBook(theBook);
 
@@ -183,6 +185,12 @@ const NotesPage = () => {
                 >
                   {chapter.title}
                 </HeadingTag>
+
+                {chapter.contentId === 'unmatched' && (
+                  <Text className="italic text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                    (Notes that could not be matched to specific chapters)
+                  </Text>
+                )}
 
                 {chapter.notes && chapter.notes.length > 0 && (
                   <ul role="list" className="space-y-3 mt-6">

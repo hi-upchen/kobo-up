@@ -297,13 +297,14 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
 
   // Parse book chapters
   const thisBookChapters = await getBookChapters(db, contentId);
-
+  
   // Put notes into chapters
   thisBookChapters.forEach((chapter, chapterIdx) => {
     thisBookChapters[chapterIdx].notes = fetchedNotes
       .filter((note) => {
         return note.contentId === chapter.chapterIdBookmarked
-          || note.contentId === chapter.contentId;
+          || note.contentId === chapter.contentId
+          || chapter.contentId.includes(note.contentId);
       })
       .sort((a, b) => {
         const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
@@ -323,6 +324,31 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
       }
     });
   });
+
+  // If there are any unmatched notes, create a fake chapter to hold them
+  if (fetchedNotes.length > 0) {
+    const unmatchedChapter: IBookChapter = {
+      contentId: 'unmatched',
+      title: 'Other Highlights',
+      contentType: 899,
+      bookId: thisBookChapters[0].bookId,
+      bookTitle: thisBookChapters[0].bookTitle,
+      chapterIdBookmarked: 'unmatched',
+      volumeIndex: 999,
+      depth: 1,
+      notes: fetchedNotes.sort((a, b) => {
+        const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
+        const bStartPath = padNumbersToThreeDigits(b.startContainerPath);
+
+        if (aStartPath === bStartPath) {
+          return a.startOffset - b.startOffset;
+        }
+        return aStartPath.localeCompare(bStartPath);
+      })
+    };
+    thisBookChapters.push(unmatchedChapter);
+  }
+
 
   return thisBookChapters;
 }
