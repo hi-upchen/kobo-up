@@ -19,14 +19,14 @@ export default function StepsSection() {
       <div className="mt-8">
         {isDirectoryPickerSupported && (
           <ol className="mt-4 list-decimal list-inside space-y-2">
-            <li>
-              <Text><Strong>Connect:</Strong> Connect your Kobo device.</Text>
+            <li className="text-zinc-800 dark:text-zinc-300">
+              <Text className="inline"><Strong>Connect:</Strong> Connect your Kobo device.</Text>
             </li>
-            <li>
-              <Text><Strong>Select:</Strong> Select the <Strong>Kobo Root folder</Strong>.</Text>
+            <li className="text-zinc-800 dark:text-zinc-300">
+              <Text className="inline"><Strong>Select:</Strong> Select the <Strong>Kobo Root folder</Strong>.</Text>
             </li>
-            <li>
-              <Text><Strong>View:</Strong> View your notes and annotations books by books.</Text>
+            <li className="text-zinc-800 dark:text-zinc-300">
+              <Text className="inline"><Strong>View:</Strong> View your notes and annotations books by books.</Text>
             </li>
           </ol>
         )}
