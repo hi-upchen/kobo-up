@@ -13,7 +13,16 @@ const nextConfig = {
     });
 
     return config;
-  }
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.buymeacoffee.com',
+        pathname: '/buttons/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

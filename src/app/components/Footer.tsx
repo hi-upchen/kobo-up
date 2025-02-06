@@ -9,6 +9,7 @@ import { Button } from '@/components/button';
 import { Text } from '@/components/text'
 import { Dialog, DialogActions, DialogBody, DialogDescription, DialogTitle } from '@/components/dialog';
 import { getKoboDbFromLocal } from "@/models/KoboDB";
+import Image from 'next/image';
 
 const Footer = () => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -70,6 +71,8 @@ const Footer = () => {
       <footer className="footer flex justify-center items-center pt-4 px-2 py-2 border-t text-zinc-400 dark:text-zinc-500 text-sm border-zinc-900/10 dark:border-zinc-100/10 mt-6 sm:mt-12 lg:mt-24">
         <p className="mr-4 ml-auto hover:scale-105 transition">© 出走工程師 Up</p>
 
+
+
         <a href="mailto:hi.upchen@gmail.com" title="Send Email to Up Chen" className="mr-2 hover:text-zinc-950 dark:hover:text-zinc-50 transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
@@ -98,6 +101,21 @@ const Footer = () => {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3V2z" />
           </svg>
+        </a>
+
+        <a 
+          href="https://www.buymeacoffee.com/hi.upchen" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="mr-4 hover:opacity-80 transition"
+        >
+          <Image 
+            src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" 
+            alt="Buy Me A Coffee" 
+            width={217}
+            height={60}
+            className="h-[40px] w-auto"
+          />
         </a>
 
         <p className="ml-auto hover:text-zinc-950 dark:hover:text-zinc-50 transition">
