@@ -18,6 +18,7 @@ import { Heading, Subheading } from '@/components/heading'
 import { Text } from '@/components/text'
 import { Divider } from '@/components/divider'
 import { Dropdown, DropdownButton, DropdownItem, DropdownMenu, DropdownDescription, DropdownLabel } from '@/components/dropdown'
+import { DonationCard } from '@/app/components/DonationCard'
 
 
 const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookChapter[]) => {
@@ -78,6 +79,8 @@ const NotesPage = () => {
   const [notes, setNotes] = useState<IBookHighlightNAnnotation[] | null>(null);
   const [bookChapters, setBookChapters] = useState<IBookChapter[] | null>(null);
 
+  const [sponsorShouldBeShwonOnChapterIdx, setSponsorShouldBeShwonOnChapterIdx] = useState<number|null>(null);
+
   useEffect(() => {
     const loadExistingDb = async () => {
       try {
@@ -116,8 +119,27 @@ const NotesPage = () => {
     loadExistingDb();
   }, [contentId]);
 
+  // calculate the chapter index where the sponsor should be shown, shown after X notes
+  useEffect(() => {
+    let noteDisplayedCount = 0;
+    for (let chapterIdx = 0; chapterIdx < (bookChapters?.length || 0); chapterIdx++) {
+      const chapter = bookChapters![chapterIdx];
+      noteDisplayedCount += chapter.notes?.length || 0;
+      if (noteDisplayedCount >= 7) {
+        setSponsorShouldBeShwonOnChapterIdx(chapterIdx);
+        break;
+      }
+    }
+
+    // If no chapter met the threshold, use the last chapter index
+    if (sponsorShouldBeShwonOnChapterIdx === null && bookChapters && bookChapters.length > 0) {
+      setSponsorShouldBeShwonOnChapterIdx(bookChapters.length - 1);
+    }
+  }, [bookChapters]);
+
   return (
     <div>
+    
       <Text onClick={() => window.history.back()} className="mb-4 flex items-center cursor-pointer">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="size-6">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
@@ -168,7 +190,7 @@ const NotesPage = () => {
         </div>
         <Divider />
         <div className="">
-          {bookChapters.map((chapter) => {
+          {bookChapters.map((chapter, chapterIdx) => {
             const HeadingTag = `h${chapter.depth + 1}` as keyof JSX.IntrinsicElements;
 
             return (
@@ -225,6 +247,10 @@ const NotesPage = () => {
                       </li>
                     ))}
                   </ul>
+                )}
+
+                {sponsorShouldBeShwonOnChapterIdx===chapterIdx && (
+                  <DonationCard />
                 )}
               </div>
             );

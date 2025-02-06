@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, saveKoboDbToLocal, getKoboDbFromLocal, getUserDetails, IBook } from "@/models/KoboDB";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/table'
@@ -12,6 +13,7 @@ import { Badge } from '@/components/badge'
 import FAQ from '@/app/components/FAQ';
 import Steps from '@/app/components/Steps';
 import { pushToDataLayer } from '@/utils/gtm';
+import { DonationCard } from '@/app/components/DonationCard'
 
 
 const formatDate = (dateString: string) => {
@@ -61,16 +63,16 @@ const ChooseKoboSqlitePage = () => {
 
           setBookList(booksWithNotes);
 
-          pushToDataLayer({ 
+          pushToDataLayer({
             event: 'load_existing_kobodb'
           });
 
           const koboUser = await getUserDetails(db);
           if (koboUser) {
-            pushToDataLayer({ 
+            pushToDataLayer({
               event: 'identify_user',
               kobo_user_id: koboUser.userId,
-            });  
+            });
           }
         } else {
           setBookList(null); // no kobo database is found
@@ -90,7 +92,7 @@ const ChooseKoboSqlitePage = () => {
       const dbFileHandle: FileSystemFileHandle | null = await findKoboDB(directoryHandle);
       const isNewDB = bookList === null
 
-      pushToDataLayer({ 
+      pushToDataLayer({
         event: 'upload_kobodb'
       });
 
@@ -107,22 +109,22 @@ const ChooseKoboSqlitePage = () => {
 
       await saveKoboDbToLocal(dbFileHandle);
       const booksWithNotes = await processBookList(db);
-      
+
       setBookList(booksWithNotes);
 
       const koboUser = await getUserDetails(db);
       if (koboUser) {
         if (isNewDB) {
-          pushToDataLayer({ 
+          pushToDataLayer({
             event: 'set_user_alias',
             kobo_user_id: koboUser.userId,
           });
         }
 
-        pushToDataLayer({ 
+        pushToDataLayer({
           event: 'identify_user',
           kobo_user_id: koboUser.userId,
-        });  
+        });
       }
     } catch (error) {
       console.error('Error accessing directory:', error);
@@ -130,6 +132,7 @@ const ChooseKoboSqlitePage = () => {
   };
 
   return (
+
     <div>
       {(bookList === null) && (
         <div>
@@ -184,7 +187,7 @@ const ChooseKoboSqlitePage = () => {
             </button>
           </div>
 
-          {bookList && bookList.length > 0 &&
+          {bookList && bookList.length > 0 && <>
             <Table striped className="">
               <TableHead className='sticky top-0'>
                 <TableRow>
@@ -195,32 +198,46 @@ const ChooseKoboSqlitePage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {bookList.map((theBook) => (
-                  <TableRow key={theBook.contentId} href={`/book/${encodeURIComponent(theBook.contentId)}/notes`} className='hover:bg-zinc-950/5 dark:hover:bg-white/5'>
-                    <TableCell className="font-medium text-wrap ">
-                      <Heading level={2} className='text-lg font-bold '>{theBook.bookTitle}</Heading>
-                      {theBook.subtitle && <Text className='text-sm'>{theBook.subtitle}</Text>}
 
-                      <Text className='lg:hidden text-sm'>{theBook.author}</Text>
-                      <Text className='sm:hidden mt-2 text-sm'>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
-                    </TableCell>
-                    <TableCell className='max-w-64 text-wrap hidden lg:table-cell'>
-                      <Text>{theBook.author}</Text>
-                    </TableCell>
-                    <TableCell className='hidden sm:table-cell'>
-                      <Text>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
-                    </TableCell>
-                    <TableCell className='text-center'>
-                      {!theBook.notes.length && '0'}
-                      {!!theBook.notes.length && <Badge color="lime">{theBook.notes.length}</Badge>}
-                    </TableCell>
-                  </TableRow>
+
+                {/* Book List Rows */}
+                {bookList.map((theBook, idx) => (
+                  <React.Fragment key={theBook.contentId}>
+                    <TableRow href={`/book/${encodeURIComponent(theBook.contentId)}/notes`} className='hover:bg-zinc-950/5 dark:hover:bg-white/5'>
+                      <TableCell className="font-medium text-wrap ">
+                        <Heading level={2} className='text-lg font-bold '>{theBook.bookTitle}</Heading>
+                        {theBook.subtitle && <Text className='text-sm'>{theBook.subtitle}</Text>}
+                        <Text className='lg:hidden text-sm'>{theBook.author}</Text>
+                        <Text className='sm:hidden mt-2 text-sm'>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
+                      </TableCell>
+                      <TableCell className='max-w-64 text-wrap hidden lg:table-cell'>
+                        <Text>{theBook.author}</Text>
+                      </TableCell>
+                      <TableCell className='hidden sm:table-cell'>
+                        <Text>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
+                      </TableCell>
+                      <TableCell className='text-center'>
+                        {!theBook.notes.length && '0'}
+                        {!!theBook.notes.length && <Badge color="lime">{theBook.notes.length}</Badge>}
+                      </TableCell>
+                    </TableRow>
+                    {idx === 5 && (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <DonationCard />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </React.Fragment>
                 ))}
               </TableBody>
-            </Table>}
+            </Table>
+
+          </>}
         </div>
       )}
     </div>
+
   );
 };
 
