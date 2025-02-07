@@ -16,7 +16,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
-      <GoogleTagManager gtmId="GTM-M82SLQZ6" />
+      <head>
+        <meta name="description" content="Easily export Kobo highlights and notes with Kobo Note Up. No software installation required. Just connect your Kobo device, open the website, and download your notes in TXT or Markdown format. Perfect for organizing and importing into Notion or other apps." />
+        <GoogleTagManager gtmId="GTM-M82SLQZ6" />
+      </head>
 
       <body className="">
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82SLQZ6" height="0" width="0" style={{ display: "none", visibility: "hidden" }}></iframe></noscript>
