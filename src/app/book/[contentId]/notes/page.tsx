@@ -122,17 +122,18 @@ const NotesPage = () => {
   // calculate the chapter index where the sponsor should be shown, shown after X notes
   useEffect(() => {
     let noteDisplayedCount = 0;
-    for (let chapterIdx = 0; chapterIdx < (bookChapters?.length || 0); chapterIdx++) {
+    let chapterIdx = 0;
+    for (chapterIdx = 0; chapterIdx < (bookChapters?.length || 0); chapterIdx++) {
       const chapter = bookChapters![chapterIdx];
       noteDisplayedCount += chapter.notes?.length || 0;
-      if (noteDisplayedCount >= 7) {
+      if (noteDisplayedCount >= 10) {
         setSponsorShouldBeShwonOnChapterIdx(chapterIdx);
         break;
       }
     }
 
     // If no chapter met the threshold, use the last chapter index
-    if (sponsorShouldBeShwonOnChapterIdx === null && bookChapters && bookChapters.length > 0) {
+    if (chapterIdx === bookChapters?.length) {
       setSponsorShouldBeShwonOnChapterIdx(bookChapters.length - 1);
     }
   }, [bookChapters]);
