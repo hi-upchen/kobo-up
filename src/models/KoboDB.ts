@@ -78,9 +78,9 @@ export async function connKoboDB(dbFileHandle: FileSystemFileHandle | File): Pro
   }
   const arrayBuffer = await file.arrayBuffer();
 
-  // Initialize sql.js
+  // Initialize sql.js with local files for production safety
   const SQL = await initSqlJs({
-    locateFile: file => `https://sql.js.org/dist/${file}`
+    locateFile: file => `/sql.js/${file}`
   });
   const db = new SQL.Database(new Uint8Array(arrayBuffer));
 
