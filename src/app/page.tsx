@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { findKoboDB, connKoboDB, getBookList, getHighlightNAnnotationList, checkIsKoboDB, saveKoboDbToLocal, getKoboDbFromLocal, getUserDetails, IBook } from "@/models/KoboDB";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/table'
+import { Checkbox } from '@/components/checkbox'
 
 import { Database } from 'sql.js';
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
@@ -14,6 +15,8 @@ import FAQ from '@/app/components/FAQ';
 import Steps from '@/app/components/Steps';
 import { pushToDataLayer } from '@/utils/gtm';
 import { DonationCard } from '@/app/components/DonationCard'
+import { ActionBar, ExportModal, ExportFormat, ExportStructure } from '@/app/components/ExportFeature'
+import { exportBooks } from '@/utils/exportUtils'
 
 
 const formatDate = (dateString: string) => {
@@ -28,6 +31,11 @@ const formatDate = (dateString: string) => {
 const ChooseKoboSqlitePage = () => {
   const [bookList, setBookList] = useState<Array<IBook> | null>([]);
   const [isDirectoryPickerSupported, setIsDirectoryPickerSupported] = useState(true);
+  const [selectedBooks, setSelectedBooks] = useState<Set<string>>(new Set());
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportMode, setExportMode] = useState<'all' | 'selected'>('all');
+  const [db, setDb] = useState<Database | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setIsDirectoryPickerSupported('showDirectoryPicker' in window);
@@ -58,16 +66,17 @@ const ChooseKoboSqlitePage = () => {
         const dbFileHandle = await getKoboDbFromLocal();
 
         if (dbFileHandle) {
-          const db = await connKoboDB(dbFileHandle);
-          const booksWithNotes = await processBookList(db);
+          const database = await connKoboDB(dbFileHandle);
+          const booksWithNotes = await processBookList(database);
 
           setBookList(booksWithNotes);
+          setDb(database);
 
           pushToDataLayer({
             event: 'load_existing_kobodb'
           });
 
-          const koboUser = await getUserDetails(db);
+          const koboUser = await getUserDetails(database);
           if (koboUser) {
             pushToDataLayer({
               event: 'identify_user',
@@ -100,19 +109,20 @@ const ChooseKoboSqlitePage = () => {
         throw new Error("Kobo database not found");
       }
 
-      const db = await connKoboDB(dbFileHandle);
-      const isKoboDB = await checkIsKoboDB(db);
+      const database = await connKoboDB(dbFileHandle);
+      const isKoboDB = await checkIsKoboDB(database);
 
       if (!isKoboDB) {
         throw new Error("Not a Kobo database");
       }
 
       await saveKoboDbToLocal(dbFileHandle);
-      const booksWithNotes = await processBookList(db);
+      const booksWithNotes = await processBookList(database);
 
       setBookList(booksWithNotes);
+      setDb(database);
 
-      const koboUser = await getUserDetails(db);
+      const koboUser = await getUserDetails(database);
       if (koboUser) {
         if (isNewDB) {
           pushToDataLayer({
@@ -131,8 +141,75 @@ const ChooseKoboSqlitePage = () => {
     }
   };
 
-  return (
+  const handleToggleSelect = useCallback((contentId: string) => {
+    setSelectedBooks(prev => {
+      const next = new Set(prev);
+      if (next.has(contentId)) {
+        next.delete(contentId);
+      } else {
+        next.add(contentId);
+      }
+      return next;
+    });
+  }, []);
 
+  const handleSelectAll = useCallback(() => {
+    if (!bookList) return;
+    
+    if (selectedBooks.size === bookList.length) {
+      setSelectedBooks(new Set());
+    } else {
+      setSelectedBooks(new Set(bookList.map(book => book.contentId)));
+    }
+  }, [bookList, selectedBooks.size]);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedBooks(new Set());
+  }, []);
+
+  const handleExportAll = useCallback(() => {
+    setExportMode('all');
+    setIsExportModalOpen(true);
+  }, []);
+
+  const handleExportSelected = useCallback(() => {
+    setExportMode('selected');
+    setIsExportModalOpen(true);
+  }, []);
+
+  const handleExportConfirm = useCallback(async (format: ExportFormat, structure: ExportStructure) => {
+    if (!db) return;
+    
+    setIsExporting(true);
+    setIsExportModalOpen(false);
+    
+    try {
+      const options = {
+        format,
+        structure,
+        bookIds: exportMode === 'selected' ? Array.from(selectedBooks) : undefined
+      };
+      
+      await exportBooks(db, options);
+      
+      pushToDataLayer({
+        event: 'export_books',
+        export_format: format,
+        export_structure: structure,
+        export_count: exportMode === 'selected' ? selectedBooks.size : bookList?.length || 0
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [db, exportMode, selectedBooks, bookList]);
+
+  const actionBarState = selectedBooks.size > 0 ? 'selection' : 'default';
+  const isAllSelected = bookList ? selectedBooks.size === bookList.length : false;
+  const isPartiallySelected = selectedBooks.size > 0 && !isAllSelected;
+
+  return (
     <div>
       {(bookList === null) && (
         <div>
@@ -187,36 +264,64 @@ const ChooseKoboSqlitePage = () => {
             </button>
           </div>
 
-          {bookList && bookList.length > 0 && <>
-            <Table striped className="">
-              <TableHead className='sticky top-0'>
-                <TableRow>
-                  <TableHeader className=''>Book Title</TableHeader>
-                  <TableHeader className='hidden lg:table-cell'>Author</TableHeader>
-                  <TableHeader className='hidden sm:table-cell'>Last Read</TableHeader>
-                  <TableHeader>Highlights</TableHeader>
+          {bookList && bookList.length > 0 && (
+            <div className="border-t border-b border-gray-200 rounded-t-lg rounded-b-lg overflow-hidden">
+              <ActionBar
+                selectedCount={selectedBooks.size}
+                totalBooks={bookList?.length || 0}
+                actionBarState={actionBarState}
+                onExportAll={handleExportAll}
+                onExportSelected={handleExportSelected}
+                onClearSelection={handleClearSelection}
+              />
+              
+              <div className="overflow-x-auto">
+                <Table className="border-0">
+                  <TableHead className='sticky top-0 z-10 bg-gray-100'>
+                <TableRow className='h-[60px]'>
+                  <TableHeader className='text-center'>
+                    <Checkbox
+                      checked={isAllSelected}
+                      indeterminate={isPartiallySelected}
+                      onChange={handleSelectAll}
+                    />
+                  </TableHeader>
+                  <TableHeader className='py-3'>Book Title</TableHeader>
+                  <TableHeader className='hidden lg:table-cell py-3'>Author</TableHeader>
+                  <TableHeader className='hidden sm:table-cell py-3'>Last Read</TableHeader>
+                  <TableHeader className='py-3'>Highlights</TableHeader>
                 </TableRow>
               </TableHead>
               <TableBody>
 
 
                 {/* Book List Rows */}
-                {bookList.map((theBook, idx) => (
+                {bookList.map((theBook, idx) => {
+                  const isSelected = selectedBooks.has(theBook.contentId);
+                  return (
                   <React.Fragment key={theBook.contentId}>
-                    <TableRow href={`/book/${encodeURIComponent(theBook.contentId)}/notes`} className='hover:bg-zinc-950/5 dark:hover:bg-white/5'>
-                      <TableCell className="font-medium text-wrap ">
+                    <TableRow 
+                      className=""
+                    >
+                      <TableCell onClick={(e) => e.stopPropagation()} className="text-center">
+                        <Checkbox
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(theBook.contentId)}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium text-wrap cursor-pointer" onClick={() => window.location.href = `/book/${encodeURIComponent(theBook.contentId)}/notes`}>
                         <Heading level={2} className='text-lg font-bold '>{theBook.bookTitle}</Heading>
                         {theBook.subtitle && <Text className='text-sm'>{theBook.subtitle}</Text>}
                         <Text className='lg:hidden text-sm'>{theBook.author}</Text>
                         <Text className='sm:hidden mt-2 text-sm'>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
                       </TableCell>
-                      <TableCell className='max-w-64 text-wrap hidden lg:table-cell'>
+                      <TableCell className='max-w-64 text-wrap hidden lg:table-cell cursor-pointer' onClick={() => window.location.href = `/book/${encodeURIComponent(theBook.contentId)}/notes`}>
                         <Text>{theBook.author}</Text>
                       </TableCell>
-                      <TableCell className='hidden sm:table-cell'>
+                      <TableCell className='hidden sm:table-cell cursor-pointer' onClick={() => window.location.href = `/book/${encodeURIComponent(theBook.contentId)}/notes`}>
                         <Text>{theBook.lastRead && formatDate(theBook.lastRead)}</Text>
                       </TableCell>
-                      <TableCell className='text-center'>
+                      <TableCell className='text-center cursor-pointer' onClick={() => window.location.href = `/book/${encodeURIComponent(theBook.contentId)}/notes`}>
                         {!theBook.notes.length && '0'}
                         {!!theBook.notes.length && <Badge color="lime">{theBook.notes.length}</Badge>}
                       </TableCell>
@@ -229,11 +334,21 @@ const ChooseKoboSqlitePage = () => {
                       </TableRow>
                     )}
                   </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-
-          </>}
+                )})}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+          
+          <ExportModal
+            isOpen={isExportModalOpen}
+            mode={exportMode}
+            selectedCount={selectedBooks.size}
+            totalBooks={bookList?.length || 0}
+            onConfirm={handleExportConfirm}
+            onClose={() => setIsExportModalOpen(false)}
+          />
         </div>
       )}
     </div>

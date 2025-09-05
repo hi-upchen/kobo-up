@@ -19,53 +19,9 @@ import { Text } from '@/components/text'
 import { Divider } from '@/components/divider'
 import { Dropdown, DropdownButton, DropdownItem, DropdownMenu, DropdownDescription, DropdownLabel } from '@/components/dropdown'
 import { DonationCard } from '@/app/components/DonationCard'
+import { generateMarkdownContent, downloadFile, downloadMarkdownFile, downloadTxtFile } from '@/utils/markdownGenerator'
 
 
-const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookChapter[]) => {
-  let content = ``
-
-  content += `# ${book.bookTitle}\n`;
-  content += `## ${book.author}\n\n`;
-
-  bookChapterAndNotes.forEach((chapter) => {
-    const headingPrefix = '#'.repeat(chapter.depth);
-    content += `${headingPrefix} ${chapter.title}\n`;
-
-    if (chapter.notes && chapter.notes.length > 0) {
-      content += '\n';
-      chapter.notes.forEach((chapterNote) => {
-        if (chapterNote.text) {
-          content += `* ${chapterNote.text.replace(/\r?\n|\r/g, '').trim()}\n`;
-        }
-        if (chapterNote.annotation) {
-          content += `> ${chapterNote.annotation.replace(/\r?\n|\r/g, '\n> ').trim()}\n`;
-        }
-      });
-      content += '\n';
-    }
-  })
-  return content
-}
-
-const downloadFile = (filename: string, content: string, type: string) => {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
-
-const downloadMarkdownFile = (filename: string, content: string) => {
-  downloadFile(filename, content, 'text/markdown');
-};
-
-const downloadTxtFile = (filename: string, content: string) => {
-  downloadFile(filename, content, 'text/plain');
-};
 
 const NotesPage = () => {
   const params = useParams();
