@@ -21,10 +21,6 @@ export function NotesHeader({ book, notesCount, onBack }: NotesHeaderProps) {
 
       <Heading className='text-center'>{book?.bookTitle}</Heading>
       <Subheading className='text-center mt-3 mb-12 text-zinc-500 dark:text-zinc-300'>{book?.author}</Subheading>
-      
-      {notesCount > 0 && (
-        <Text className='text-zinc-500 dark:text-zinc-400'>{notesCount} highlghts</Text>
-      )}
     </div>
   )
 }

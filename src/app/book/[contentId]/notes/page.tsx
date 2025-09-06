@@ -34,10 +34,19 @@ const NotesPage = () => {
       try {
         // Check if database is initialized
         if (!KoboService.isDatabaseInitialized()) {
-          console.error('Database not initialized');
-          alert('Database not initialized. Please upload a Kobo database first.');
-          router.push('/books');
-          return;
+          // Try to initialize from stored IndexedDB data
+          const hasStoredData = await KoboService.hasStoredData()
+          
+          if (hasStoredData) {
+            console.log('Auto-initializing database from stored data...')
+            await KoboService.initializeFromStoredData()
+          } else {
+            // No data found, redirect to landing page
+            console.error('No database found')
+            alert('No Kobo database found. Please upload a Kobo database first.')
+            router.push('/')
+            return
+          }
         }
 
         // Load book details
