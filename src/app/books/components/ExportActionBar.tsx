@@ -76,7 +76,7 @@ export function ExportActionBar({
           }`}
         >
           <div className="text-sm text-gray-600 dark:text-zinc-300">
-            {books.length} books in your library
+            {books.length} books in your library, {booksWithContent.length} with notes
           </div>
           <button 
             onClick={handleExportAll}

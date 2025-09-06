@@ -51,15 +51,19 @@ export function BookGridRow({
     ${!hasContent ? "opacity-60" : ""}
   `.trim()
 
-  return (
-    <Link href={href} className={rowClassName}>
+  const rowContent = (
+    <>
       {/* Checkbox */}
-      <div className="flex items-center justify-center" onClick={handleCheckboxClick}>
-        <Checkbox
-          checked={isSelected}
-          onChange={handleCheckboxChange}
-          className="h-4 w-4"
-        />
+      <div className="flex items-center justify-center" onClick={hasContent ? handleCheckboxClick : undefined}>
+        {hasContent ? (
+          <Checkbox
+            checked={isSelected}
+            onChange={handleCheckboxChange}
+            className="h-4 w-4"
+          />
+        ) : (
+          <div className="h-4 w-4"></div>
+        )}
       </div>
       
       {/* Book Info - responsive stacking */}
@@ -108,6 +112,12 @@ export function BookGridRow({
           <Text className="text-sm text-gray-400 text-center min-w-[40px]">0</Text>
         )}
       </div>
+    </>
+  )
+
+  return (
+    <Link href={href} className={rowClassName}>
+      {rowContent}
     </Link>
   )
 }

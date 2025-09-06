@@ -94,6 +94,14 @@ export default function BooksPage() {
   }, [books])
 
   const handleBookSelection = (contentId: string, checked: boolean) => {
+    // Find the book to check if it has content
+    const book = books.find(b => b.contentId === contentId)
+    if (!book) return
+    
+    // Only allow selection if book has notes/highlights
+    const hasContent = (book.totalNotes > 0) || (book.totalHighlights > 0)
+    if (!hasContent) return
+    
     setSelectedBooks(prev => {
       const next = new Set(prev)
       if (checked) {
@@ -188,8 +196,12 @@ export default function BooksPage() {
     )
   }
 
-  const isAllSelected = books.length > 0 && selectedBooks.size === books.length
-  const isPartiallySelected = selectedBooks.size > 0 && !isAllSelected
+  // Only consider books with notes for "all selected" state
+  const booksWithContent = books.filter(book => 
+    (book.totalNotes > 0) || (book.totalHighlights > 0)
+  )
+  const isAllSelected = booksWithContent.length > 0 && 
+    booksWithContent.every(book => selectedBooks.has(book.contentId))
 
   return (
     <div className="min-h-screen">
@@ -212,7 +224,6 @@ export default function BooksPage() {
             books={books}
             selectedBooks={selectedBooks}
             isAllSelected={isAllSelected}
-            isPartiallySelected={isPartiallySelected}
             onBookSelection={handleBookSelection}
             onSelectAll={handleSelectAll}
             donationShouldBeShownAfterBookIndex={donationShouldBeShownAfterBookIndex}

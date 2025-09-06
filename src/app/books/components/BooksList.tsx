@@ -9,7 +9,6 @@ interface BooksListProps {
   books: IBook[]
   selectedBooks: Set<string>
   isAllSelected: boolean
-  isPartiallySelected: boolean
   onBookSelection: (contentId: string, checked: boolean) => void
   onSelectAll: (checked: boolean) => void
   donationShouldBeShownAfterBookIndex?: number | null
@@ -19,7 +18,6 @@ export function BooksList({
   books,
   selectedBooks,
   isAllSelected,
-  isPartiallySelected,
   onBookSelection,
   onSelectAll,
   donationShouldBeShownAfterBookIndex
@@ -46,7 +44,6 @@ export function BooksList({
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}
-            indeterminate={isPartiallySelected}
             onChange={(checked) => onSelectAll(checked)}
             className="h-4 w-4"
           />
@@ -78,7 +75,6 @@ export function BooksList({
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}
-            indeterminate={isPartiallySelected}
             onChange={(checked) => onSelectAll(checked)}
             className="h-4 w-4"
           />
@@ -105,7 +101,6 @@ export function BooksList({
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}
-            indeterminate={isPartiallySelected}
             onChange={(checked) => onSelectAll(checked)}
             className="h-4 w-4"
           />
