@@ -40,9 +40,9 @@ export function BooksList({
   }
 
   return (
-    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg bg-white">
+    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-b-lg bg-white dark:bg-zinc-900">
       {/* Header - Desktop */}
-      <div className="hidden lg:grid lg:grid-cols-[auto_1fr_120px_120px_80px] gap-4 items-center p-2 md:p-4 bg-gray-50 border-b border-gray-200">
+      <div className="hidden lg:grid lg:grid-cols-[auto_1fr_120px_120px_80px] gap-4 items-center p-2 md:p-4 bg-gray-50 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}
@@ -74,7 +74,7 @@ export function BooksList({
       </div>
 
       {/* Header - Medium */}
-      <div className="hidden md:grid md:grid-cols-[auto_1fr_120px_80px] lg:hidden gap-4 items-center p-2 md:p-4 bg-gray-50 border-b border-gray-200">
+      <div className="hidden md:grid md:grid-cols-[auto_1fr_120px_80px] lg:hidden gap-4 items-center p-2 md:p-4 bg-gray-50 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}
@@ -101,7 +101,7 @@ export function BooksList({
       </div>
 
       {/* Header - Small */}
-      <div className="md:hidden grid grid-cols-[auto_1fr_80px] gap-4 items-center p-2 bg-gray-50 border-b border-gray-200">
+      <div className="md:hidden grid grid-cols-[auto_1fr_80px] gap-4 items-center p-2 bg-gray-50 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700">
         <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isAllSelected}

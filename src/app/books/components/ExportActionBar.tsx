@@ -68,19 +68,19 @@ export function ExportActionBar({
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-t-lg overflow-hidden relative">
+      <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-t-lg overflow-hidden relative">
         {/* Default State */}
         <div 
           className={`px-4 py-3 flex justify-between items-center transition-all duration-300 ${
             isSelectionMode ? 'transform -translate-y-full opacity-0' : 'transform translate-y-0 opacity-100'
           }`}
         >
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-zinc-300">
             {books.length} books in your library
           </div>
           <button 
             onClick={handleExportAll}
-            className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:border-indigo-500 hover:text-indigo-600 transition-colors"
+            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 rounded hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 transition-colors"
             disabled={booksWithContent.length === 0}
           >
             Export All
@@ -89,17 +89,17 @@ export function ExportActionBar({
 
         {/* Selection State */}
         <div 
-          className={`absolute inset-0 px-4 py-3 bg-blue-50 flex justify-between items-center transition-all duration-300 ${
+          className={`absolute inset-0 px-4 py-3 bg-blue-50 dark:bg-blue-950/50 flex justify-between items-center transition-all duration-300 ${
             isSelectionMode ? 'transform translate-y-0 opacity-100' : 'transform translate-y-full opacity-0'
           }`}
         >
           <div className="flex items-center gap-4">
-            <span className="text-sm text-blue-700">
+            <span className="text-sm text-blue-700 dark:text-blue-300">
               {selectedCount} book{selectedCount !== 1 ? 's' : ''} selected
             </span>
             <button 
               onClick={handleClearSelection}
-              className="text-xs text-blue-600 underline hover:text-blue-800"
+              className="text-xs text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
             >
               Clear selection
             </button>

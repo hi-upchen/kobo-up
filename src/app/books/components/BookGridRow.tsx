@@ -43,7 +43,9 @@ export function BookGridRow({
     md:p-4 
     border-b 
     border-gray-200 
+    dark:border-zinc-700
     hover:bg-gray-50 
+    dark:hover:bg-zinc-800 
     cursor-pointer 
     transition-colors
     ${!hasContent ? "opacity-60" : ""}
@@ -62,11 +64,11 @@ export function BookGridRow({
       
       {/* Book Info - responsive stacking */}
       <div className="flex flex-col space-y-1 min-w-0">
-        <Strong className={`text leading-tight ${hasContent ? 'text-gray-900' : 'text-gray-500'}`}>
+        <Strong className="leading-tight">
           {book.title || 'Untitled'}
         </Strong>
         {book.subtitle && (
-          <Text className="text-sm text-gray-500 leading-tight">
+          <Text className="text-sm leading-tight">
             {book.subtitle}
           </Text>
         )}
@@ -80,7 +82,7 @@ export function BookGridRow({
       {/* Author - hidden on medium and below */}
       <div className="hidden lg:block min-w-0">
         {book.author && (
-          <Text className="text-sm text-gray-600 line-clamp-2">
+          <Text className="text-sm line-clamp-2">
             {book.author}
           </Text>
         )}
@@ -88,7 +90,7 @@ export function BookGridRow({
       
       {/* Last Read - hidden on small */}
       <div className="hidden md:block">
-        <Text className="text-sm text-gray-500 text-center">
+        <Text className="text-sm text-center">
           {book.lastRead ? formatDate(book.lastRead) : 'Never'}
         </Text>
       </div>

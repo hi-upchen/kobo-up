@@ -50,11 +50,11 @@ export function ExportOptionsModal({
         <div className="space-y-6">
           {/* Format Selection Group */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-3">
+            <label className="block text-sm font-medium text-gray-900 dark:text-zinc-100 mb-3">
               Format
             </label>
             <div className="space-y-3">
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
                 <input
                   type="radio"
                   name="format"
@@ -64,14 +64,14 @@ export function ExportOptionsModal({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">Markdown (.md)</div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-zinc-100">Markdown (.md)</div>
+                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
                     Perfect for Notion, Obsidian, and documentation platforms
                   </div>
                 </div>
               </label>
               
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
                 <input
                   type="radio"
                   name="format"
@@ -81,8 +81,8 @@ export function ExportOptionsModal({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">Plain Text (.txt)</div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-zinc-100">Plain Text (.txt)</div>
+                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
                     Universal compatibility across all applications
                   </div>
                 </div>
@@ -92,11 +92,11 @@ export function ExportOptionsModal({
 
           {/* Structure Selection Group */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 mb-3">
+            <label className="block text-sm font-medium text-gray-900 dark:text-zinc-100 mb-3">
               File Structure
             </label>
             <div className="space-y-3">
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
                 <input
                   type="radio"
                   name="structure"
@@ -106,14 +106,14 @@ export function ExportOptionsModal({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">Separate files (ZIP archive)</div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-zinc-100">Separate files (ZIP archive)</div>
+                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
                     One file per book - easier to organize and import individually
                   </div>
                 </div>
               </label>
               
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
                 <input
                   type="radio"
                   name="structure"
@@ -123,8 +123,8 @@ export function ExportOptionsModal({
                   className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">Combined file</div>
-                  <div className="text-sm text-gray-500 mt-1">
+                  <div className="font-medium text-gray-900 dark:text-zinc-100">Combined file</div>
+                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
                     All books merged into a single document
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export function ExportOptionsModal({
       <DialogActions>
         <button 
           onClick={handleClose}
-          className="px-3 py-1.5 text-xs border border-gray-300 rounded hover:border-gray-400 hover:text-gray-700 transition-colors"
+          className="px-3 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 rounded hover:border-gray-400 dark:hover:border-zinc-500 hover:text-gray-700 dark:hover:text-zinc-100 transition-colors"
         >
           Cancel
         </button>
