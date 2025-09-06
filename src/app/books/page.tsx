@@ -8,7 +8,7 @@ import { ErrorService } from '@/services/errorService'
 import type { IBook } from '@/types/kobo'
 import { BooksHeader } from './components/BooksHeader'
 import { BooksList } from './components/BooksList'
-import { ExportControls } from './components/ExportControls'
+import { ExportActionBar } from './components/ExportActionBar'
 import { BookRowSkeleton } from './components/BookRowSkeleton'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
@@ -107,7 +107,11 @@ export default function BooksPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedBooks(new Set(books.map(book => book.contentId)))
+      // Only select books with content (notes >= 1 or highlights >= 1)
+      const booksWithContent = books.filter(book => 
+        (book.totalNotes > 0) || (book.totalHighlights > 0)
+      )
+      setSelectedBooks(new Set(booksWithContent.map(book => book.contentId)))
     } else {
       setSelectedBooks(new Set())
     }
@@ -119,9 +123,6 @@ export default function BooksPage() {
     NavigationService.navigateToLanding(router, { reupload: true })
   }
 
-  const getSelectedBooksData = () => {
-    return books.filter(book => selectedBooks.has(book.contentId))
-  }
 
   if (isLoading) {
     return (
@@ -134,7 +135,7 @@ export default function BooksPage() {
           </div>
           
           {/* Books List Skeleton */}
-          <BookRowSkeleton count={8} />
+          <BookRowSkeleton count={15} />
         </div>
       </div>
     )
@@ -199,15 +200,14 @@ export default function BooksPage() {
         />
 
         <div className="mt-8">
-          <ExportControls
-            selectedCount={selectedBooks.size}
-            totalCount={books.length}
-            selectedBooks={getSelectedBooksData()}
-            allBooks={books}
+          <ExportActionBar
+            books={books}
+            selectedBooks={selectedBooks}
+            onSelectionChange={setSelectedBooks}
           />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-0">
           <BooksList
             books={books}
             selectedBooks={selectedBooks}

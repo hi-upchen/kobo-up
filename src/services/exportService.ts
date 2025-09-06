@@ -1,4 +1,7 @@
 import type { IBook } from '../types/kobo'
+import JSZip from 'jszip'
+import { KoboService } from './koboService'
+import { generateMarkdownContent } from '@/utils/markdownGenerator'
 
 export class ExportService {
   /**
@@ -127,9 +130,19 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
   }
 
   /**
-   * Export books as plain text file
+   * Generate plain text content from books array
    */
-  static exportBooksToText(books: IBook[]): void {
+  static generateText(books: IBook[]): string {
+    if (books.length === 0) {
+      return `Kobo Books Export
+${'='.repeat(20)}
+
+No books found in your library.
+
+---
+Exported from KoboUp on ${new Date().toLocaleDateString()}`
+    }
+
     let content = `Kobo Books Export\n${'='.repeat(20)}\n\n`
     content += `Total books: ${books.length}\n\n`
     
@@ -146,7 +159,197 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
     
     content += `\nExported from KoboUp on ${new Date().toLocaleDateString()}`
     
+    return content
+  }
+
+  /**
+   * Export content as file with specified name and MIME type
+   */
+  static exportAsFile(content: string, filename: string, mimeType: string): void {
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    
+    // Append to body, click, then remove
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // Clean up the URL object
+    URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Export books as plain text file
+   */
+  static exportBooksToText(books: IBook[]): void {
+    const content = this.generateText(books)
     const filename = this.generateFilename('kobo-books-export', 'txt')
     this.downloadFile(content, filename)
+  }
+
+  /**
+   * Generate markdown content for a single book
+   */
+  static generateSingleBookMarkdown(book: IBook): string {
+    let markdown = `# ${book.title}\n\n`
+    markdown += `**Author:** ${book.author || 'Unknown'}\n`
+    markdown += `**Highlights:** ${book.totalHighlights}\n`
+    markdown += `**Notes:** ${book.totalNotes}\n`
+    if (book.dateCreated) {
+      markdown += `**Date Added:** ${book.dateCreated}\n`
+    }
+    markdown += `\n---\n\n`
+    markdown += `*Exported from KoboUp on ${new Date().toLocaleDateString()}*`
+    
+    return markdown
+  }
+
+  /**
+   * Generate plain text content for a single book
+   */
+  static generateSingleBookText(book: IBook): string {
+    let content = `${book.title}\n${'='.repeat(book.title.length)}\n\n`
+    content += `Author: ${book.author || 'Unknown'}\n`
+    content += `Highlights: ${book.totalHighlights}\n`
+    content += `Notes: ${book.totalNotes}\n`
+    if (book.dateCreated) {
+      content += `Date Added: ${book.dateCreated}\n`
+    }
+    content += `\n---\n\n`
+    content += `Exported from KoboUp on ${new Date().toLocaleDateString()}`
+    
+    return content
+  }
+
+  /**
+   * Generate safe filename from book title
+   */
+  static generateSafeFilename(title: string, extension: string): string {
+    // Remove or replace invalid filename characters
+    const safeTitle = title
+      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid chars
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .substring(0, 100) // Limit length
+    
+    return `${safeTitle}.${extension}`
+  }
+
+
+  /**
+   * Export books as ZIP archive with separate files
+   */
+  static async exportBooksAsZip(books: IBook[], format: 'markdown' | 'text'): Promise<void> {
+    const zip = new JSZip()
+    const extension = format === 'markdown' ? 'md' : 'txt'
+    
+    // Load full content for each book and add to ZIP
+    for (const bookFromList of books) {
+      try {
+        // Load book details (same as book detail page) - this gets the correct book object
+        const book = await KoboService.loadBookDetails(bookFromList.contentId)
+        
+        if (!book) {
+          console.error(`Book not found: ${bookFromList.contentId}`)
+          continue
+        }
+        
+        // Load book chapters with notes/highlights (same as book detail page)
+        const bookChapters = await KoboService.loadBookChaptersWithNotes(book.contentId)
+        
+        // Use exactly the same logic as book detail page - identical content for both formats
+        const content = generateMarkdownContent(book, bookChapters)
+        
+        const safeTitle = book.bookTitle || book.title || 'Untitled'
+        const filename = this.generateSafeFilename(safeTitle, extension)
+        zip.file(filename, content)
+      } catch (error) {
+        const bookTitle = bookFromList.bookTitle || bookFromList.title || 'Untitled'
+        console.error(`Failed to load content for book: ${bookTitle}`, error)
+        // Add a fallback file with error message
+        const errorContent = `# ${bookTitle}\n\nError loading content for this book.\n\nBook: ${bookTitle}\nAuthor: ${bookFromList.author || 'Unknown'}`
+        const filename = this.generateSafeFilename(bookTitle, extension)
+        zip.file(filename, errorContent)
+      }
+    }
+    
+    // Generate the ZIP file
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const zipFilename = `kobo-books-export-${timestamp}.zip`
+    
+    // Download the ZIP file
+    const url = URL.createObjectURL(zipBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = zipFilename
+    
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Export books as single combined file (concatenated content)
+   */
+  static async exportBooksAsCombinedFile(books: IBook[], format: 'markdown' | 'text', exportMode: 'all' | 'selected'): Promise<void> {
+    let combinedContent = ''
+    const extension = format === 'markdown' ? 'md' : 'txt'
+    
+    // Load and concatenate content for all books
+    for (let i = 0; i < books.length; i++) {
+      const bookFromList = books[i]
+      
+      try {
+        // Load book details (same as book detail page) - this gets the correct book object
+        const book = await KoboService.loadBookDetails(bookFromList.contentId)
+        
+        if (!book) {
+          console.error(`Book not found: ${bookFromList.contentId}`)
+          continue
+        }
+        
+        // Load book chapters with notes/highlights (same as book detail page)
+        const bookChapters = await KoboService.loadBookChaptersWithNotes(book.contentId)
+        
+        // Use the same generateMarkdownContent function as book detail page
+        const bookContent = generateMarkdownContent(book, bookChapters)
+        
+        // Add book content to combined content
+        combinedContent += bookContent
+        
+        // Add separator between books (except for the last book)
+        if (i < books.length - 1) {
+          combinedContent += '\n\n---\n\n'
+        }
+        
+      } catch (error) {
+        const bookTitle = bookFromList.bookTitle || bookFromList.title || 'Untitled'
+        console.error(`Failed to load content for book: ${bookTitle}`, error)
+        
+        // Add error message for this book
+        combinedContent += `# ${bookTitle}\n\nError loading content for this book.\n\nBook: ${bookTitle}\nAuthor: ${bookFromList.author || 'Unknown'}`
+        
+        // Add separator if not the last book
+        if (i < books.length - 1) {
+          combinedContent += '\n\n---\n\n'
+        }
+      }
+    }
+    
+    // Generate filename
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
+    const filename = exportMode === 'all' 
+      ? `kobo-library-export-${timestamp}.${extension}`
+      : `kobo-${books.length}-books-export-${timestamp}.${extension}`
+    
+    // Download the combined file
+    const mimeType = format === 'markdown' ? 'text/markdown' : 'text/plain'
+    this.exportAsFile(combinedContent, filename, mimeType)
   }
 }
