@@ -73,18 +73,22 @@ export function BookRowSkeleton({ count = 5 }: BookRowSkeletonProps) {
               md:p-4 
               border-b 
               border-gray-200
-              dark:border-zinc-700"
+              dark:border-zinc-700
+              hover:bg-gray-50 
+              dark:hover:bg-zinc-800 
+              cursor-pointer 
+              transition-colors"
           >
             {/* Checkbox */}
             <div className="flex items-center justify-center">
               <div className="h-4 w-4 bg-gray-200 dark:bg-zinc-600 rounded animate-pulse"></div>
             </div>
             
-            {/* Book Info */}
+            {/* Book Info - responsive stacking */}
             <div className="flex flex-col space-y-1 min-w-0">
               <div className="h-4 bg-gray-200 dark:bg-zinc-600 rounded animate-pulse w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3 lg:hidden"></div>
+              <div className="h-3 bg-gray-200 dark:bg-zinc-600 rounded animate-pulse w-1/2"></div>
+              <div className="h-3 bg-gray-200 dark:bg-zinc-600 rounded animate-pulse w-2/3 lg:hidden"></div>
             </div>
             
             {/* Author - hidden on medium and below */}
@@ -94,12 +98,12 @@ export function BookRowSkeleton({ count = 5 }: BookRowSkeletonProps) {
             
             {/* Last Read - hidden on small */}
             <div className="hidden md:block">
-              <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mx-auto"></div>
+              <div className="h-4 bg-gray-200 dark:bg-zinc-600 rounded animate-pulse w-16 mx-auto"></div>
             </div>
             
             {/* Notes Count */}
             <div className="flex justify-center">
-              <div className="h-6 w-10 bg-gray-200 rounded-full animate-pulse"></div>
+              <div className="h-6 w-10 bg-gray-200 dark:bg-zinc-600 rounded-full animate-pulse"></div>
             </div>
           </div>
         ))}
