@@ -2,7 +2,9 @@
 
 // components/Footer.tsx
 import { useState } from 'react';
-import { deleteDatabase } from "@/models/KoboDB";
+import { useRouter } from 'next/navigation';
+import { KoboService } from '@/services/koboService';
+import { NavigationService } from '@/services/navigationService';
 import { pushToDataLayer } from '@/utils/gtm';
 import { upload } from '@vercel/blob/client';
 import { Button } from '@/components/button';
@@ -12,6 +14,7 @@ import { getKoboDbFromLocal } from "@/models/KoboDB";
 import Image from 'next/image';
 
 const Footer = () => {
+  const router = useRouter();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isUploadingOpen, setIsUploadingOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -60,10 +63,18 @@ const Footer = () => {
     }
   };
 
-  const handleDelete = () => {
-    pushToDataLayer({ event: 'clear_kobo_db' });
-    deleteDatabase();
-    window.location.href = "/";
+  const handleDelete = async () => {
+    try {
+      setIsDeleteConfirmOpen(false);
+      pushToDataLayer({ event: 'clear_kobo_db' });
+      await KoboService.clearStoredData();
+      NavigationService.navigateToLanding(router, { reupload: true });
+    } catch (error) {
+      console.error('Failed to clear database:', error);
+      setIsDeleteConfirmOpen(false);
+      // Still navigate to landing even if cleanup fails
+      NavigationService.navigateToLanding(router, { reupload: true });
+    }
   };
 
   return (

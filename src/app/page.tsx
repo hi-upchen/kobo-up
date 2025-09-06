@@ -12,7 +12,6 @@ import { HeroHeading, Subheading } from '@/components/heading'
 import { Text } from '@/components/text'
 import Steps from '@/app/components/Steps'
 import FAQ from '@/app/components/FAQ'
-import Footer from '@/components/Footer'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -148,8 +147,6 @@ export default function LandingPage() {
       {/* Landing Content */}
       <Steps />
       <FAQ />
-      
-      <Footer />
     </div>
   )
 }
