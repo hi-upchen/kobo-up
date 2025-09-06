@@ -99,7 +99,7 @@ export function ExportControls({
                 Export Selected (MD)
               </Button>
               <Button
-                color="gray"
+                color="zinc"
                 onClick={() => handleExportSelected('json')}
                 className="mt-2 sm:mt-0 w-full sm:w-auto"
               >
@@ -117,7 +117,7 @@ export function ExportControls({
                 Export All (MD)
               </Button>
               <Button
-                color="gray"
+                color="zinc"
                 onClick={() => handleExportAll('json')}
                 className="mt-2 sm:mt-0 w-full sm:w-auto"
                 disabled={totalCount === 0}
@@ -125,7 +125,7 @@ export function ExportControls({
                 Export All (JSON)
               </Button>
               <Button
-                color="gray"
+                color="zinc"
                 onClick={() => handleExportAll('text')}
                 className="mt-2 sm:mt-0 w-full sm:w-auto"
                 disabled={totalCount === 0}

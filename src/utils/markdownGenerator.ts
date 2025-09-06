@@ -1,4 +1,4 @@
-import { IBook, IBookChapter } from '@/models/KoboDB'
+import { IBook, IBookChapter } from '@/types/kobo'
 
 export const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookChapter[]): string => {
   let content = ``

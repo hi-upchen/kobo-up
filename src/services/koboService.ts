@@ -164,8 +164,8 @@ export class KoboService {
       // 1. Books with notes >= 1, sorted by lastRead desc
       // 2. Books with notes = 0, sorted by lastRead desc
       return booksWithCounts.sort((a, b) => {
-        const aTotalNotes = a.totalNotes + a.totalHighlights
-        const bTotalNotes = b.totalNotes + b.totalHighlights
+        const aTotalNotes = (a.totalNotes ?? 0) + (a.totalHighlights ?? 0)
+        const bTotalNotes = (b.totalNotes ?? 0) + (b.totalHighlights ?? 0)
         
         // First, separate by groups: books with notes vs books without notes
         if (aTotalNotes >= 1 && bTotalNotes === 0) return -1  // a (with notes) comes first
@@ -269,13 +269,6 @@ export class KoboService {
       this.database.close()
       this.database = null
     }
-  }
-
-  /**
-   * Check if database is initialized
-   */
-  static isDatabaseInitialized(): boolean {
-    return this.database !== null
   }
 
   /**
@@ -391,7 +384,7 @@ export class KoboService {
     
     for (let i = 0; i < uint8Array.length; i += chunkSize) {
       const chunk = uint8Array.slice(i, i + chunkSize)
-      binary += String.fromCharCode(...chunk)
+      binary += String.fromCharCode.apply(null, Array.from(chunk))
     }
     
     return btoa(binary)

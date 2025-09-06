@@ -9,13 +9,13 @@ export enum ErrorType {
 
 export class KoboError extends Error {
   public readonly type: ErrorType
-  public readonly context?: Record<string, any>
+  public readonly context?: Record<string, unknown>
   public readonly timestamp: Date
 
   constructor(
     message: string,
     type: ErrorType,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'KoboError'
@@ -51,7 +51,7 @@ export class ErrorService {
   /**
    * Handle file-related errors
    */
-  static handleFileError(message: string, context?: Record<string, any>): KoboError {
+  static handleFileError(message: string, context?: Record<string, unknown>): KoboError {
     const koboError = new KoboError(message, ErrorType.FILE_ERROR, context)
     this.logError(koboError)
     return koboError
@@ -74,7 +74,7 @@ export class ErrorService {
   /**
    * Handle validation errors
    */
-  static handleValidationError(message: string, context?: Record<string, any>): KoboError {
+  static handleValidationError(message: string, context?: Record<string, unknown>): KoboError {
     const koboError = new KoboError(message, ErrorType.VALIDATION_ERROR, context)
     this.logError(koboError)
     return koboError
@@ -83,7 +83,7 @@ export class ErrorService {
   /**
    * Handle export-related errors
    */
-  static handleExportError(message: string, context?: Record<string, any>): KoboError {
+  static handleExportError(message: string, context?: Record<string, unknown>): KoboError {
     const koboError = new KoboError(message, ErrorType.EXPORT_ERROR, context)
     this.logError(koboError)
     return koboError
@@ -106,7 +106,7 @@ export class ErrorService {
   /**
    * Check if error is a KoboError instance
    */
-  static isKoboError(error: any): error is KoboError {
+  static isKoboError(error: unknown): error is KoboError {
     return error instanceof KoboError
   }
 
@@ -149,7 +149,7 @@ export class ErrorService {
     message: string
     type: string
     timestamp: Date
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   } {
     return {
       message: this.getErrorMessage(error),

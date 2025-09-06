@@ -3,8 +3,6 @@
 import React, { useState } from 'react'
 import { Dialog, DialogActions, DialogBody, DialogDescription, DialogTitle } from '@/components/dialog'
 import { Button } from '@/components/button'
-import { DocumentTextIcon, ArchiveBoxIcon, DocumentIcon, FolderIcon } from '@heroicons/react/24/outline'
-import clsx from 'clsx'
 
 export type ExportFormat = 'markdown' | 'text'
 export type ExportStructure = 'single' | 'zip'

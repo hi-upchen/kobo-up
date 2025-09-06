@@ -53,8 +53,8 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
         source: 'KoboUp',
         exportDate: new Date().toISOString(),
         totalBooks: books.length,
-        totalHighlights: books.reduce((sum, book) => sum + book.totalHighlights, 0),
-        totalNotes: books.reduce((sum, book) => sum + book.totalNotes, 0)
+        totalHighlights: books.reduce((sum, book) => sum + (book.totalHighlights ?? 0), 0),
+        totalNotes: books.reduce((sum, book) => sum + (book.totalNotes ?? 0), 0)
       },
       exportDate: new Date().toISOString(),
       totalBooks: books.length,
@@ -212,7 +212,8 @@ Exported from KoboUp on ${new Date().toLocaleDateString()}`
    * Generate plain text content for a single book
    */
   static generateSingleBookText(book: IBook): string {
-    let content = `${book.title}\n${'='.repeat(book.title.length)}\n\n`
+    const title = book.title || book.bookTitle || 'Unknown Title'
+    let content = `${title}\n${'='.repeat(title.length)}\n\n`
     content += `Author: ${book.author || 'Unknown'}\n`
     content += `Highlights: ${book.totalHighlights}\n`
     content += `Notes: ${book.totalNotes}\n`

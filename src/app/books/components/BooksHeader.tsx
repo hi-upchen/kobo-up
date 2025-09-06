@@ -1,14 +1,12 @@
 import React from 'react'
 import { Heading } from '@/components/heading'
-import { Text } from '@/components/text'
 import { Button } from '@/components/button'
 
 interface BooksHeaderProps {
-  totalBooks: number
   onReUpload: () => void
 }
 
-export function BooksHeader({ totalBooks, onReUpload }: BooksHeaderProps) {
+export function BooksHeader({ onReUpload }: BooksHeaderProps) {
   return (
     <div className="sm:flex sm:items-center sm:justify-between">
       <div>

@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { Button } from '@/components/button'
-import { Dropdown, DropdownButton, DropdownItem, DropdownMenu } from '@/components/dropdown'
 
 interface ActionBarProps {
   selectedCount: number

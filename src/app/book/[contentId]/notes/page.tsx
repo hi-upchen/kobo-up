@@ -7,7 +7,7 @@ import {
   IBook,
   IBookHighlightNAnnotation,
   IBookChapter
-} from "@/models/KoboDB";
+} from "@/types/kobo";
 import { KoboService } from '@/services/koboService';
 
 import { NotesHeader } from './components/NotesHeader'
@@ -113,7 +113,6 @@ const NotesPage = () => {
     <div>
       <NotesHeader 
         book={book} 
-        notesCount={notes?.length || 0} 
         onBack={handleBack} 
       />
 

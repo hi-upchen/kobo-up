@@ -35,7 +35,6 @@ export function ExportOptionsModal({
   }
 
   const isAllMode = selectedCount === 0
-  const displayCount = isAllMode ? totalBooks : selectedCount
 
   return (
     <Dialog open={isOpen} onClose={handleClose}>

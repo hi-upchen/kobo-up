@@ -4,7 +4,6 @@
  */
 import { KoboService } from '../koboService'
 import { readFileSync } from 'fs'
-import { resolve } from 'path'
 
 // Path to the real Kobo database file provided by user
 const KOBO_DB_PATH = '/Users/upchen/Dropbox/01_Projects/15-KoboUp/db folders/up chen/KoboReader.sqlite'
@@ -21,7 +20,7 @@ describe('KoboService Integration Tests', () => {
       })
 
       console.log(`Loaded Kobo database file: ${koboFile.size} bytes`)
-    } catch (error) {
+    } catch {
       console.warn('Real Kobo database file not found, skipping integration tests')
     }
   })

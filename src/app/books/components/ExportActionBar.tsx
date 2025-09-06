@@ -22,7 +22,7 @@ export function ExportActionBar({
 
   // Books with content (notes or highlights)
   const booksWithContent = books.filter(book => 
-    (book.totalNotes > 0) || (book.totalHighlights > 0)
+    ((book.totalNotes ?? 0) > 0) || ((book.totalHighlights ?? 0) > 0)
   )
 
   useEffect(() => {

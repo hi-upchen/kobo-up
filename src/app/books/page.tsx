@@ -10,9 +10,7 @@ import { BooksHeader } from './components/BooksHeader'
 import { BooksList } from './components/BooksList'
 import { ExportActionBar } from './components/ExportActionBar'
 import { BookRowSkeleton } from './components/BookRowSkeleton'
-import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
-import { DonationCard } from '@/components/DonationCard'
 
 export default function BooksPage() {
   const router = useRouter()
@@ -70,7 +68,7 @@ export default function BooksPage() {
     
     for (let i = 0; i < books.length; i++) {
       const book = books[i]
-      const hasNotes = (book.totalNotes + book.totalHighlights) > 0
+      const hasNotes = ((book.totalNotes ?? 0) + (book.totalHighlights ?? 0)) > 0
       
       if (hasNotes) {
         booksWithNotesCount++
@@ -99,7 +97,7 @@ export default function BooksPage() {
     if (!book) return
     
     // Only allow selection if book has notes/highlights
-    const hasContent = (book.totalNotes > 0) || (book.totalHighlights > 0)
+    const hasContent = ((book.totalNotes ?? 0) > 0) || ((book.totalHighlights ?? 0) > 0)
     if (!hasContent) return
     
     setSelectedBooks(prev => {
@@ -117,7 +115,7 @@ export default function BooksPage() {
     if (checked) {
       // Only select books with content (notes >= 1 or highlights >= 1)
       const booksWithContent = books.filter(book => 
-        (book.totalNotes > 0) || (book.totalHighlights > 0)
+        ((book.totalNotes ?? 0) > 0) || ((book.totalHighlights ?? 0) > 0)
       )
       setSelectedBooks(new Set(booksWithContent.map(book => book.contentId)))
     } else {
@@ -167,7 +165,6 @@ export default function BooksPage() {
       <div className="min-h-screen">
         <div className="mx-auto max-w-7xl px-2 md:px-6 lg:px-8 py-12">
           <BooksHeader
-            totalBooks={0}
             onReUpload={handleReUpload}
           />
           
@@ -197,7 +194,7 @@ export default function BooksPage() {
 
   // Only consider books with notes for "all selected" state
   const booksWithContent = books.filter(book => 
-    (book.totalNotes > 0) || (book.totalHighlights > 0)
+    ((book.totalNotes ?? 0) > 0) || ((book.totalHighlights ?? 0) > 0)
   )
   const isAllSelected = booksWithContent.length > 0 && 
     booksWithContent.every(book => selectedBooks.has(book.contentId))
@@ -206,7 +203,6 @@ export default function BooksPage() {
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-2 md:px-6 lg:px-8 py-12">
         <BooksHeader
-          totalBooks={books.length}
           onReUpload={handleReUpload}
         />
 

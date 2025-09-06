@@ -29,8 +29,8 @@ export function BookGridRow({
   }
 
 
-  const hasContent = book.totalNotes > 0 || book.totalHighlights > 0
-  const totalCount = book.totalNotes + book.totalHighlights
+  const hasContent = (book.totalNotes ?? 0) > 0 || (book.totalHighlights ?? 0) > 0
+  const totalCount = (book.totalNotes ?? 0) + (book.totalHighlights ?? 0)
   
   const rowClassName = `
     grid 

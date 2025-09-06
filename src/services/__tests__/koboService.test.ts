@@ -76,12 +76,12 @@ describe('KoboService', () => {
   describe('isDatabaseInitialized', () => {
     it('should return true when database is initialized', () => {
       // Set up database mock
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       expect(KoboService.isDatabaseInitialized()).toBe(true)
     })
 
     it('should return false when database is null', () => {
-      ;(KoboService as any).database = null
+      ;(KoboService as { database: unknown }).database = null
       expect(KoboService.isDatabaseInitialized()).toBe(false)
     })
   })
@@ -99,7 +99,7 @@ describe('KoboService', () => {
     })
 
     it('should return book details when database is initialized', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getBook as jest.Mock).mockResolvedValue(mockBook)
 
       const result = await KoboService.loadBookDetails('test-book-id')
@@ -109,7 +109,7 @@ describe('KoboService', () => {
     })
 
     it('should throw error when database is not initialized', async () => {
-      ;(KoboService as any).database = null
+      ;(KoboService as { database: unknown }).database = null
 
       await expect(KoboService.loadBookDetails('test-book-id'))
         .rejects
@@ -117,7 +117,7 @@ describe('KoboService', () => {
     })
 
     it('should return null when book is not found', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getBook as jest.Mock).mockResolvedValue(null)
 
       const result = await KoboService.loadBookDetails('non-existent-id')
@@ -137,7 +137,7 @@ describe('KoboService', () => {
     })
 
     it('should return book annotations when database is initialized', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getHighlightNAnnotationList as jest.Mock).mockResolvedValue(mockAnnotations)
 
       const result = await KoboService.loadBookAnnotations('test-book-id')
@@ -147,7 +147,7 @@ describe('KoboService', () => {
     })
 
     it('should throw error when database is not initialized', async () => {
-      ;(KoboService as any).database = null
+      ;(KoboService as { database: unknown }).database = null
 
       await expect(KoboService.loadBookAnnotations('test-book-id'))
         .rejects
@@ -155,7 +155,7 @@ describe('KoboService', () => {
     })
 
     it('should return empty array when no annotations found', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getHighlightNAnnotationList as jest.Mock).mockResolvedValue([])
 
       const result = await KoboService.loadBookAnnotations('test-book-id')
@@ -175,7 +175,7 @@ describe('KoboService', () => {
     })
 
     it('should return book chapters with notes when database is initialized', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getChaptersWithNotes as jest.Mock).mockResolvedValue(mockChapters)
 
       const result = await KoboService.loadBookChaptersWithNotes('test-book-id')
@@ -185,7 +185,7 @@ describe('KoboService', () => {
     })
 
     it('should throw error when database is not initialized', async () => {
-      ;(KoboService as any).database = null
+      ;(KoboService as { database: unknown }).database = null
 
       await expect(KoboService.loadBookChaptersWithNotes('test-book-id'))
         .rejects
@@ -193,7 +193,7 @@ describe('KoboService', () => {
     })
 
     it('should return empty array when no chapters found', async () => {
-      ;(KoboService as any).database = {}
+      ;(KoboService as { database: unknown }).database = {}
       ;(KoboDB.getChaptersWithNotes as jest.Mock).mockResolvedValue([])
 
       const result = await KoboService.loadBookChaptersWithNotes('test-book-id')

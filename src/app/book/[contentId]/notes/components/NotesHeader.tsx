@@ -5,11 +5,10 @@ import type { IBook } from '@/types/kobo'
 
 interface NotesHeaderProps {
   book: IBook | null
-  notesCount: number
   onBack: () => void
 }
 
-export function NotesHeader({ book, notesCount, onBack }: NotesHeaderProps) {
+export function NotesHeader({ book, onBack }: NotesHeaderProps) {
   return (
     <div>
       <Text onClick={onBack} className="mb-4 flex items-center cursor-pointer">

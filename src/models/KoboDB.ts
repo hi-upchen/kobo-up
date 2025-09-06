@@ -1,4 +1,5 @@
 import initSqlJs, { Database, QueryExecResult, SqlValue } from 'sql.js';
+import type { IBook, IBookHighlightNAnnotation, IBookChapter, KoboUserDetails } from '../types/kobo';
 
 async function findFileHandle(directoryHandle: FileSystemDirectoryHandle, fileName: string): Promise<FileSystemFileHandle | null> {
   for await (const entry of directoryHandle.values()) {
@@ -501,91 +502,3 @@ export async function deleteDatabase(): Promise<void> {
   });
 }
 
-export interface IBook {
-  annotation: string;
-  author: string;
-  bookmarkId: string;
-  bookTitle: string;
-  chapterProgress: number;
-  contentId: string;
-  dateCreated: string;
-  fileSize: number;
-  hidden: boolean;
-  isbn: string;
-  lastRead: string;
-  publisher: string;
-  rating: number;
-  readPercent: number;
-  releaseDate: string;
-  series: string;
-  seriesNumber: string;
-  source: string;
-  subtitle: string;
-  text: string;
-  type: string;
-  volumeId: string;
-  notes: IBookHighlightNAnnotation[];
-}
-
-export interface IBookHighlightNAnnotation {
-  annotation: string | null;
-  bookmarkId: string;
-  startContainerPath: string; // span#kobo\.80\.1
-  startOffset: number; // in chapter startOffset
-  chapterProgress: number; // 0.1176470588235294
-  contentId: string; // IBook.contentId
-  dateCreated: string; // 2024-07-12T02:53:50.000
-  hidden: string; // "true", "false"
-  text: string;
-  type: string; //"highlight"
-  volumeId: string;
-}
-
-export interface KoboUserDetails {
-  userId: string; // c0f36858-xxxx-xxxx-xxxx-7afe64ed50ee
-  userKey: string; // b0d10696-xxxx-xxxx-xxxx-18e4c5b59609
-  userDisplayName: string; // xxxx@gmail.com
-  userEmail: string | null;
-  deviceId: string | null; // f49a2dcf56c785384d35f4e3323ee07fe48977e855d423acc04455af4xxxxxx
-  facebookAuthToken: string | null;
-  hasMadePurchase: boolean | null;
-  isOneStoreAccount: boolean | null;
-  isChildAccount: boolean | null;
-  refreshToken: string | null;
-  authToken: string | null;
-  authType: string | null;
-  loyalty: boolean | null;
-  isLibraryMigrated: boolean | null;
-  syncContinuationToken: string | null;
-  subscription: string | null;
-  librarySyncType: string | null;
-  librarySyncTime: string | null;
-  syncTokenAppVersion: string | null;
-  storefront: string | null;
-  newUserPromoCurrency: string | null;
-  newUserPromoValue: string | null;
-  koboAccessToken: string | null;
-  koboAccessTokenExpiry: string | null;
-  annotationsSyncToken: string | null;
-  privacyPermissions: boolean | null;
-  annotationsMigrated: boolean | null;
-  notebookSyncTime: string | null;
-  notebookSyncToken: string | null;
-}
-
-export interface IBookChapter {
-  notes: IBookHighlightNAnnotation[];
-  contentId: string;
-  contentType: number;
-  mimeType?: string;
-  bookId: string;
-  bookTitle: string;
-  imageId?: string;
-  title: string;
-  chapterIdBookmarked: string;
-  volumeIndex: number;
-  depth: number;
-  isbn?: string;
-
-  note?: Array<IBookHighlightNAnnotation>; // to be added later
-}

@@ -72,7 +72,7 @@ export default function LandingPage() {
 
     try {
       // Use the File System Access API
-      const directoryHandle = await (window as any).showDirectoryPicker()
+      const directoryHandle = await (window as Window & { showDirectoryPicker(): Promise<FileSystemDirectoryHandle> }).showDirectoryPicker()
       
       // Find Kobo database file in the directory
       const dbFileHandle = await findKoboDBInDirectory(directoryHandle)
