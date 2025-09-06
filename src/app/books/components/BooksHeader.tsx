@@ -13,12 +13,6 @@ export function BooksHeader({ totalBooks, onReUpload }: BooksHeaderProps) {
     <div className="sm:flex sm:items-center sm:justify-between">
       <div>
         <Heading level={1}>Your Kobo Library</Heading>
-        <Text className="mt-2 text-gray-600">
-          {totalBooks === 0 
-            ? 'No books found' 
-            : `${totalBooks} book${totalBooks === 1 ? '' : 's'} with notes and highlights`
-          }
-        </Text>
       </div>
       
       <div className="mt-4 sm:ml-4 sm:mt-0 sm:flex-none">
