@@ -2,7 +2,7 @@ import { Text } from '@/components/text'
 
 export function DonationCard() {
   return (
-    <div className="bg-indigo-50 dark:bg-indigo-800/30 p-8 rounded-lg mt-8">
+    <div className="bg-indigo-50 dark:bg-indigo-800/30 p-8 rounded-lg border-t border-b border-gray-200 dark:border-gray-700 my-6">
       <div className="flex flex-col items-center gap-4 max-w-full px-4">
         <Text className="text-center text-wrap">
           Thank you for using Kobo Note Up! ☕📚

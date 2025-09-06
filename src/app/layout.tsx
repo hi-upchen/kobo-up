@@ -5,7 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Navbar } from '@/components/navbar'
 import { Sidebar } from '@/components/sidebar'
 import { StackedLayout } from '@/components/stacked-layout'
-import Footer from '@/app/components/Footer';
+import Footer from '@/components/Footer';
 import "./globals.css";
 import BackgroundShapes from '@/app/components/BackgroundShapes';
 

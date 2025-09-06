@@ -1,22 +1,21 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { KoboService } from '@/services/koboService'
 import { NavigationService } from '@/services/navigationService'
 import { ErrorService } from '@/services/errorService'
-import { DatabaseSelector } from './(landing)/components/DatabaseSelector'
+import { DatabaseSelector } from './components/DatabaseSelector'
+import Footer from '@/components/Footer'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { HeroHeading, Subheading } from '@/components/heading'
 import { Text } from '@/components/text'
 import Steps from '@/app/components/Steps'
 import FAQ from '@/app/components/FAQ'
-import Footer from '@/components/Footer'
 
 export default function LandingPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isDirectoryPickerSupported, setIsDirectoryPickerSupported] = useState(true)
@@ -25,36 +24,27 @@ export default function LandingPage() {
     // Check if File System Access API is supported
     setIsDirectoryPickerSupported('showDirectoryPicker' in window)
 
-    // Check if user wants to reupload - skip auto-redirect if true
-    const isReupload = searchParams.get('reupload') === 'true'
-    
-    // Check if there's already a stored database (only if not reuploading)
-    if (!isReupload) {
-      const checkStoredDatabase = async () => {
-        try {
-          const hasData = await KoboService.hasStoredData()
-          if (hasData) {
-            // If database exists, initialize it and redirect to books page
-            await KoboService.initializeFromStoredData()
-            NavigationService.navigateToBooks(router)
-          }
-        } catch (error) {
-          console.warn('Failed to check stored database:', error)
+    // Check if there's already a stored database
+    const checkStoredDatabase = async () => {
+      try {
+        const storedData = localStorage.getItem('kobo-database')
+        if (storedData) {
+          // If database exists, redirect to books page
+          NavigationService.navigateToBooks(router)
         }
+      } catch (error) {
+        console.warn('Failed to check stored database:', error)
       }
-
-      checkStoredDatabase()
     }
-  }, [router, searchParams])
+
+    checkStoredDatabase()
+  }, [router])
 
   const handleDatabaseSelect = async (file: File) => {
     setIsLoading(true)
     setError(null)
 
     try {
-      // Clear any existing data first (especially important when reuploading)
-      await KoboService.clearStoredData()
-      
       // Validate and initialize database using our clean service
       await KoboService.initializeDatabase(file)
 
@@ -82,7 +72,7 @@ export default function LandingPage() {
 
     try {
       // Use the File System Access API
-      const directoryHandle = await (window as unknown as { showDirectoryPicker: () => Promise<FileSystemDirectoryHandle> }).showDirectoryPicker()
+      const directoryHandle = await (window as any).showDirectoryPicker()
       
       // Find Kobo database file in the directory
       const dbFileHandle = await findKoboDBInDirectory(directoryHandle)

@@ -145,7 +145,7 @@ const Footer = () => {
       </footer>
 
       {/* Confirmation Dialog */}
-      <Dialog open={isConfirmOpen} onClose={setIsConfirmOpen}>
+      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)}>
         <DialogTitle>Share KoboDB</DialogTitle>
         <DialogDescription>
           Would you like to share your KoboDB with the developer to help improve the app?
@@ -160,7 +160,7 @@ const Footer = () => {
       </Dialog>
 
       {/* Upload Progress Dialog */}
-      <Dialog open={isUploadingOpen} onClose={() => { }}>
+      <Dialog open={isUploadingOpen} onClose={() => setIsUploadingOpen(false)}>
         <DialogTitle>Uploading Database</DialogTitle>
         <DialogBody>
           <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
