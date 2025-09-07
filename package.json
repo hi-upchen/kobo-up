@@ -1,6 +1,6 @@
 {
   "name": "kobo-up",
-  "version": "0.1.0",
+  "version": "1.2.3",
   "private": true,
   "scripts": {
     "dev": "next dev",
