@@ -14,7 +14,7 @@ export class ExportService {
 No books found in your library.
 
 ---
-*Exported from KoboUp on ${new Date().toLocaleDateString()}*`
+*Exported from Kobo Note Up on ${new Date().toLocaleDateString()}*`
     }
 
     let markdown = `# Kobo Books Export
@@ -38,7 +38,7 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
 `
     })
 
-    markdown += `*Exported from KoboUp on ${new Date().toLocaleDateString()}*`
+    markdown += `*Exported from Kobo Note Up on ${new Date().toLocaleDateString()}*`
 
     return markdown
   }
@@ -50,7 +50,7 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
     const exportData = {
       metadata: {
         version: '1.0',
-        source: 'KoboUp',
+        source: 'Kobo Note Up',
         exportDate: new Date().toISOString(),
         totalBooks: books.length,
         totalHighlights: books.reduce((sum, book) => sum + (book.totalHighlights ?? 0), 0),
@@ -140,7 +140,7 @@ ${'='.repeat(20)}
 No books found in your library.
 
 ---
-Exported from KoboUp on ${new Date().toLocaleDateString()}`
+Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
     }
 
     let content = `Kobo Books Export\n${'='.repeat(20)}\n\n`
@@ -157,7 +157,7 @@ Exported from KoboUp on ${new Date().toLocaleDateString()}`
       content += '\n'
     })
     
-    content += `\nExported from KoboUp on ${new Date().toLocaleDateString()}`
+    content += `\nExported from Kobo Note Up on ${new Date().toLocaleDateString()}`
     
     return content
   }
@@ -203,7 +203,7 @@ Exported from KoboUp on ${new Date().toLocaleDateString()}`
       markdown += `**Date Added:** ${book.dateCreated}\n`
     }
     markdown += `\n---\n\n`
-    markdown += `*Exported from KoboUp on ${new Date().toLocaleDateString()}*`
+    markdown += `*Exported from Kobo Note Up on ${new Date().toLocaleDateString()}*`
     
     return markdown
   }
@@ -221,7 +221,7 @@ Exported from KoboUp on ${new Date().toLocaleDateString()}`
       content += `Date Added: ${book.dateCreated}\n`
     }
     content += `\n---\n\n`
-    content += `Exported from KoboUp on ${new Date().toLocaleDateString()}`
+    content += `Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
     
     return content
   }

@@ -5,39 +5,39 @@ import { Heading } from '@/components/heading'
 
 const faqs = [
   {
-    question: "What Kobo devices are supported?",
+    question: "How do I export Kobo highlights and notes?",
     answer:
-      "If your Kobo e-reader connects to your computer as a disk (usually seen as a drive on your desktop or in the file explorer), you can use this tool to access and export your notes.",
+      "1. Connect your Kobo device to your computer via USB. 2. Open this tool in Chrome, Edge, or Opera browser. 3. Select your Kobo device folder. 4. Our tool automatically finds your annotations database. 5. Browse books and export highlights to Markdown or TXT format.",
   },
   {
-    question: "Is my data safe?",
+    question: "Can I export highlights from sideloaded Kobo books?",
     answer:
-      "Absolutely. Your data stays entirely on your computer; the website doesn’t upload anything to external servers, so your notes and annotations remain private and secure.",
+      "Yes! Unlike Kobo's built-in export feature that ignores sideloaded content, our tool extracts highlights and notes from ALL your books - including PDFs, EPUBs, and other formats you manually added to your device.",
   },
   {
-    question: "Do I need an account?",
+    question: "What Kobo devices work with this export tool?",
     answer:
-      "No account is needed. Just connect your Kobo device and start exporting your notes right away.",
+      "All Kobo e-readers that connect as a USB drive are supported, including: Kobo Clara, Kobo Libra, Kobo Forma, Kobo Sage, Kobo Elipsa, and older models. If your device appears as a removable drive when connected, it will work.",
   },
   {
-    question: "Which browsers are supported?",
+    question: "Is my Kobo data safe when using this tool?",
     answer:
-      "Our website utilizes modern technology to locate your Kobo database automatically. As a result, it is currently compatible only with Chrome, Edge, and Opera browsers. Safari and Firefox are not supported at this time.",
+      "Yes, completely safe. All processing happens locally in your browser - your notes and highlights never leave your computer. No data is uploaded to external servers, ensuring complete privacy and security of your reading annotations.",
   },
   {
-    question: "Can I use the app on mobile?",
+    question: "Which browsers support Kobo export functionality?",
     answer:
-      "Since you need to connect your Kobo device to a computer for it to be recognized as a drive, a laptop or desktop computer is required to use this tool.",
+      "Chrome, Edge, and Opera browsers are supported. These browsers have the File System Access API needed to automatically detect your Kobo database. Safari and Firefox don't currently support this feature.",
   },
   {
-    question: "Does this tool require additional software or programming knowledge?",
+    question: "Do I need to install software to export Kobo notes?",
     answer:
-      "No extra software, installations, or programming knowledge are needed. The tool is designed to handle everything seamlessly in your browser, making it easy for anyone to use.",
+      "No installation required. This is a web-based tool that runs entirely in your browser. Simply connect your Kobo device, open the website, and start exporting - no downloads, installations, or technical setup needed.",
   },
   {
-    question: "How does this tool locate my notes and annotations?",
+    question: "How does auto-detection of Kobo database work?",
     answer:
-      "Once you select the root folder of your connected Kobo device, our tool automatically searches for the necessary files, sparing you from having to enable hidden files or manually find the database.",
+      "When you select your Kobo device folder, our tool automatically searches for the annotations database (typically named KoboReader.sqlite). This eliminates the need to manually locate hidden files or enable system settings to find your notes.",
   },
 ]
 
@@ -45,8 +45,8 @@ export default function FAQSection() {
   return (
       <div className="mx-auto px-0 py-6 sm:py-8 lg:py-10 mt-24 lg:mt-36">
         <div className="mx-auto divide-y divide-gray-800/10 dark:divide-gray-100/10">
-          <Heading className="text-4xl font-semibold tracking-tight sm:text-5xl text-center">
-            Frequently asked questions
+          <Heading className="text-center">
+            Kobo Export Questions & Solutions
           </Heading>
           <dl className="mt-10 space-y-6 divide-y divide-gray-800/10 dark:divide-gray-100/10">
             {faqs.map((faq) => (

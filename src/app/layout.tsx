@@ -9,6 +9,8 @@ import Footer from '@/components/Footer';
 import "./globals.css";
 import BackgroundShapes from '@/app/components/BackgroundShapes';
 
+export { metadata } from './(landing)/metadata';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -17,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
       <head>
-        <meta name="description" content="Easily export Kobo highlights and notes with Kobo Note Up. No software installation required. Just connect your Kobo device, open the website, and download your notes in TXT or Markdown format. Perfect for organizing and importing into Notion or other apps." />
+        <meta name="description" content="Export Kobo highlights and notes instantly with our browser-based tool. Works with sideloaded books, auto-detects database, no installation required. Solve common Kobo export problems." />
         <GoogleTagManager gtmId="GTM-M82SLQZ6" />
       </head>
 

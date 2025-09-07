@@ -1,7 +1,7 @@
-# KoboUp Project Context
+# Kobo Note Up Project Context
 
 ## Project Overview
-- **Name**: KoboUp
+- **Name**: Kobo Note Up
 - **Type**: Kobo e-reader data visualization web application
 - **Purpose**: Allow users to upload Kobo SQLite files and view their reading notes and highlights
 
