@@ -484,18 +484,50 @@ export default function LandingPage() {
   )
 }
 
-// Helper function to find Kobo database in directory
-async function findKoboDBInDirectory(directoryHandle: FileSystemDirectoryHandle): Promise<FileSystemFileHandle | null> {
+// Helper function to find Kobo database in directory recursively
+async function findKoboDBInDirectory(
+  directoryHandle: FileSystemDirectoryHandle,
+  maxDepth: number = 3,
+  currentDepth: number = 0
+): Promise<FileSystemFileHandle | null> {
   const possibleNames = ['KoboReader.sqlite', 'Kobo.sqlite']
   
+  // Check current directory for database files
   for (const name of possibleNames) {
     try {
       const fileHandle = await directoryHandle.getFileHandle(name)
+      console.log(`Found ${name} in current directory`)
       return fileHandle
     } catch {
-      // File not found, try next name
-      continue
+      // File not found, continue
     }
+  }
+  
+  // Stop if we've reached max depth
+  if (currentDepth >= maxDepth) {
+    return null
+  }
+  
+  // Search subdirectories recursively
+  try {
+    for await (const entry of directoryHandle.values()) {
+      if (entry.kind === 'directory') {
+        // Skip system directories to avoid permission issues
+        const dirName = entry.name
+        if (dirName.startsWith('$') || dirName === 'System Volume Information') {
+          continue
+        }
+        
+        console.log(`Searching in subdirectory: ${dirName}`)
+        const subdirHandle = entry as FileSystemDirectoryHandle
+        const result = await findKoboDBInDirectory(subdirHandle, maxDepth, currentDepth + 1)
+        if (result) {
+          return result
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error accessing directory:', error)
   }
   
   return null
