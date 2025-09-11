@@ -63,7 +63,7 @@ describe('findKoboDBInDirectory', () => {
   }
 
   // Import the function to test (we'll need to extract it to a separate file)
-  let findKoboDBInDirectory: (directoryHandle: any) => Promise<any>
+  let findKoboDBInDirectory: (directoryHandle: MockFileSystemDirectoryHandle, maxDepth?: number, currentDepth?: number) => Promise<MockFileSystemFileHandle | null>
 
   beforeEach(() => {
     // Clear module cache
@@ -71,10 +71,10 @@ describe('findKoboDBInDirectory', () => {
     
     // Define the function here since we can't import from tsx files in jest
     findKoboDBInDirectory = async function(
-      directoryHandle: any,
+      directoryHandle: MockFileSystemDirectoryHandle,
       maxDepth: number = 3,
       currentDepth: number = 0
-    ): Promise<any> {
+    ): Promise<MockFileSystemFileHandle | null> {
       const possibleNames = ['KoboReader.sqlite', 'Kobo.sqlite']
       
       // Check current directory for database files
