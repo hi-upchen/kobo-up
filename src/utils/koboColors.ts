@@ -16,18 +16,6 @@ export interface HighlightColorClasses {
 }
 
 /**
- * Returns Tailwind CSS classes for a given Kobo highlight color code
- *
- * @param colorCode - The Kobo color code (0-3) or null/undefined
- * @returns Object containing light mode, dark mode, and ring color classes
- *
- * @example
- * ```typescript
- * const classes = getHighlightColorClasses(0); // Yellow
- * // Returns: { light: 'bg-yellow-100', dark: 'dark:bg-yellow-900/30', ring: 'ring-yellow-400 dark:ring-yellow-500' }
- * ```
- */
-/**
  * Returns a circle emoji for a given Kobo highlight color code
  */
 export function getColorEmoji(colorCode?: number | null): string {
