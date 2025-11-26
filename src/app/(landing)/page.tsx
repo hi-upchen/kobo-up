@@ -112,7 +112,7 @@ export default function LandingPage() {
           </HeroHeading>
           
           <Text className="mt-6 text-pretty text-lg font-medium sm:text-xl/8 text-center">
-            No technical knowledge needed. Works with every book you've ever highlighted—purchased or sideloaded.
+            Works with every book—purchased or sideloaded. No technical knowledge needed.
           </Text>
           
           <Text className="mt-4 text-sm text-gray-600 text-center">
@@ -133,6 +133,13 @@ export default function LandingPage() {
               See How It Works <span aria-hidden="true">→</span>
             </button>
           </div>
+
+          {/* New Feature Notice */}
+          <div className="mt-8 text-center">
+            <Text className="text-sm text-gray-600 dark:text-gray-400">
+              ✨ <span className="font-medium">New:</span> 🟡🔴🔵🟢 highlight colors now display and export!
+            </Text>
+          </div>
         </div>
       </div>
       
@@ -144,7 +151,7 @@ export default function LandingPage() {
               Finally, a Kobo export tool that actually works.
             </Text>
             <Text className="text-base text-gray-600">
-              Tired of Kobo's broken export feature that ignores half your library? Frustrated that sideloaded books are treated like second-class citizens? Done wrestling with complex technical guides just to access your own notes? We built Kobo Note Up because your reading insights deserve better.
+              Kobo's export ignores sideloaded books and fails randomly. We built this because your reading insights deserve better.
             </Text>
           </div>
         </div>
