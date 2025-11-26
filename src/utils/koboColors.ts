@@ -32,41 +32,41 @@ export function getHighlightColorClasses(colorCode?: number | null): HighlightCo
     case 0: // Yellow
       return {
         light: 'bg-yellow-100',
-        dark: 'dark:bg-yellow-900/30',
-        ring: 'ring-yellow-400 dark:ring-yellow-500',
-        dotFill: 'bg-yellow-200 dark:bg-yellow-800'
+        dark: 'dark:bg-yellow-900/50',
+        ring: 'ring-yellow-400 dark:ring-yellow-600',
+        dotFill: 'bg-yellow-400 dark:bg-yellow-600'
       };
 
     case 1: // Pink
       return {
-        light: 'bg-pink-200',
-        dark: 'dark:bg-pink-900/40',
-        ring: 'ring-pink-400 dark:ring-pink-500',
-        dotFill: 'bg-pink-300 dark:bg-pink-800'
+        light: 'bg-pink-100',
+        dark: 'dark:bg-pink-900/50',
+        ring: 'ring-pink-400 dark:ring-pink-600',
+        dotFill: 'bg-pink-400 dark:bg-pink-600'
       };
 
-    case 2: // Blue (Cyan)
+    case 2: // Blue
       return {
         light: 'bg-cyan-100',
-        dark: 'dark:bg-cyan-900/40',
-        ring: 'ring-cyan-400 dark:ring-cyan-500',
-        dotFill: 'bg-cyan-200 dark:bg-cyan-800'
+        dark: 'dark:bg-cyan-900/50',
+        ring: 'ring-cyan-400 dark:ring-cyan-600',
+        dotFill: 'bg-cyan-400 dark:bg-cyan-600'
       };
 
-    case 3: // Green (Lime)
+    case 3: // Green
       return {
-        light: 'bg-lime-200',
-        dark: 'dark:bg-lime-900/30',
-        ring: 'ring-lime-400 dark:ring-lime-500',
-        dotFill: 'bg-lime-300 dark:bg-lime-800'
+        light: 'bg-emerald-100',
+        dark: 'dark:bg-emerald-900/50',
+        ring: 'ring-emerald-400 dark:ring-emerald-600',
+        dotFill: 'bg-emerald-400 dark:bg-emerald-600'
       };
 
     default: // Fallback for null, undefined, or unknown codes
       return {
-        light: 'bg-gray-50',
+        light: 'bg-gray-100',
         dark: 'dark:bg-gray-800',
-        ring: 'ring-gray-400 dark:ring-gray-500',
-        dotFill: 'bg-gray-200 dark:bg-gray-700'
+        ring: 'ring-gray-400 dark:ring-gray-600',
+        dotFill: 'bg-gray-400 dark:bg-gray-600'
       };
   }
 }
