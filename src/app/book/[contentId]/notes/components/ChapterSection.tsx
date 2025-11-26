@@ -41,7 +41,8 @@ export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChap
       {chapter.notes && chapter.notes.length > 0 && (
         <ul role="list" className="space-y-3 mt-6">
           {chapter.notes.map((chapterNote, chapterNoteIdx) => {
-            const colorClasses = hasColorSupport ? getHighlightColorClasses(chapterNote.color) : null;
+            const hasColor = chapterNote.color !== undefined && chapterNote.color !== null;
+            const colorClasses = hasColorSupport && hasColor ? getHighlightColorClasses(chapterNote.color) : null;
 
             return (
               <li key={chapterNote.bookmarkId} className="relative flex gap-x-1">
@@ -62,16 +63,16 @@ export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChap
                     <div className="relative flex h-8 w-8 flex-none items-center justify-center">
                       <div className={clsx(
                         'size-1.5 rounded-full ring-1',
-                        hasColorSupport
-                          ? clsx(colorClasses?.dotFill, colorClasses?.ring)
+                        colorClasses
+                          ? clsx(colorClasses.dotFill, colorClasses.ring)
                           : 'bg-lime-200 dark:bg-zinc-700 ring-lime-600 dark:ring-lime-300'
                       )} />
                     </div>
 
                     <div className='flex flex-col'>
                       <div className={clsx(
-                        hasColorSupport
-                          ? clsx('py-0.5 px-2 rounded', colorClasses?.light, colorClasses?.dark)
+                        colorClasses
+                          ? clsx('py-0.5 px-2 rounded', colorClasses.light, colorClasses.dark)
                           : 'py-0.5'
                       )}>
                         <Text>{chapterNote.text.trim()}</Text>
@@ -80,8 +81,8 @@ export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChap
                       {chapterNote.annotation && (
                         <div className={clsx(
                           'rounded-md p-3 ring-1 ring-inset mt-2 rounded-tl-none',
-                          hasColorSupport
-                            ? colorClasses?.ring
+                          colorClasses
+                            ? colorClasses.ring
                             : 'ring-lime-600 dark:ring-lime-600 bg-lime-50 dark:bg-lime-950'
                         )}>
                           <Text>{chapterNote.annotation.trim()}</Text>
