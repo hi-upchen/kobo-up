@@ -206,7 +206,23 @@ export async function getBook(db: Database, contentId: string): Promise<IBook> {
   return sqliteResultToArray(result)[0] as unknown as IBook;
 }
 
+/**
+ * Checks if the Bookmark table has a Color column
+ */
+function hasColorColumn(db: Database): boolean {
+  try {
+    const result = db.exec("PRAGMA table_info(Bookmark)");
+    if (result.length === 0) return false;
+    const columns = result[0].values.map(row => row[1]);
+    return columns.includes('Color');
+  } catch {
+    return false;
+  }
+}
+
 export async function getHighlightNAnnotationList(db: Database, contentId: string): Promise<IBookHighlightNAnnotation[]> {
+  const hasColor = hasColorColumn(db);
+
   const sql = `
     SELECT
       T.BookmarkID as 'bookmarkId',
@@ -219,7 +235,8 @@ export async function getHighlightNAnnotationList(db: Database, contentId: strin
       T.Type as 'type',
       T.ChapterProgress as 'chapterProgress',
       T.StartOffset as 'startOffset',
-      T.StartContainerPath as 'startContainerPath'
+      T.StartContainerPath as 'startContainerPath',
+      ${hasColor ? "IFNULL(T.Color, NULL) as 'color'" : "NULL as 'color'"}
     FROM content AS B, Bookmark AS T
     WHERE B.ContentID = T.VolumeID AND T.Text != '' AND T.Hidden = 'false' AND B.ContentID = ?
     ORDER BY T.DateCreated DESC;

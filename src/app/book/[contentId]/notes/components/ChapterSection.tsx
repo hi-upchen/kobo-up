@@ -2,6 +2,7 @@ import React from 'react'
 import clsx from 'clsx'
 import { Text } from '@/components/text'
 import { DonationCard } from '@/components/DonationCard'
+import { getHighlightColorClasses } from '@/utils/koboColors'
 import type { IBookChapter } from '@/types/kobo'
 
 interface ChapterSectionProps {
@@ -12,6 +13,9 @@ interface ChapterSectionProps {
 
 export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChapterIdx }: ChapterSectionProps) {
   const HeadingTag = `h${chapter.depth + 1}` as keyof JSX.IntrinsicElements
+
+  // Check first note for color support (all notes have same schema)
+  const hasColorSupport = chapter.notes?.[0]?.color !== undefined;
 
   return (
     <div key={chapter.contentId} className='mb-6'>
@@ -36,36 +40,59 @@ export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChap
 
       {chapter.notes && chapter.notes.length > 0 && (
         <ul role="list" className="space-y-3 mt-6">
-          {chapter.notes.map((chapterNote, chapterNoteIdx) => (
-            <li key={chapterNote.bookmarkId} className="relative flex gap-x-1">
-              <div
-                className={clsx(
-                  chapterNoteIdx === chapter.notes.length - 1 ? 'h-8' : '-bottom-8',
-                  'absolute left-0 top-0 flex w-8 justify-center',
-                )}
-              >
-                <div className="w-px bg-lime-300 dark:bg-lime-600" />
-              </div>
+          {chapter.notes.map((chapterNote, chapterNoteIdx) => {
+            const colorClasses = hasColorSupport ? getHighlightColorClasses(chapterNote.color) : null;
 
-              {chapterNote.text && (
-                <>
-                  <div className="relative flex h-8 w-8 flex-none items-center justify-center">
-                    <div className="size-1.5 rounded-full bg-lime-200 dark:bg-zinc-700 ring-1 ring-lime-600 dark:ring-lime-300" />
-                  </div>
+            return (
+              <li key={chapterNote.bookmarkId} className="relative flex gap-x-1">
+                <div
+                  className={clsx(
+                    chapterNoteIdx === chapter.notes.length - 1 ? 'h-8' : '-bottom-8',
+                    'absolute left-0 top-0 flex w-8 justify-center',
+                  )}
+                >
+                  <div className={clsx(
+                    'w-px',
+                    hasColorSupport ? 'bg-gray-300 dark:bg-gray-600' : 'bg-lime-300 dark:bg-lime-600'
+                  )} />
+                </div>
 
-                  <div className='flex flex-col'>
-                    <Text className="py-0.5">{chapterNote.text.trim()}</Text>
+                {chapterNote.text && (
+                  <>
+                    <div className="relative flex h-8 w-8 flex-none items-center justify-center">
+                      <div className={clsx(
+                        'size-1.5 rounded-full ring-1',
+                        hasColorSupport
+                          ? clsx(colorClasses?.dotFill, colorClasses?.ring)
+                          : 'bg-lime-200 dark:bg-zinc-700 ring-lime-600 dark:ring-lime-300'
+                      )} />
+                    </div>
 
-                    {chapterNote.annotation && (
-                      <div className="rounded-md p-3 ring-1 ring-inset ring-lime-600 dark:ring-lime-600 bg-lime-50 dark:bg-lime-950 mt-2 rounded-tl-none">
-                        <Text>{chapterNote.annotation.trim()}</Text>
+                    <div className='flex flex-col'>
+                      <div className={clsx(
+                        hasColorSupport
+                          ? clsx('py-0.5 px-2 rounded', colorClasses?.light, colorClasses?.dark)
+                          : 'py-0.5'
+                      )}>
+                        <Text>{chapterNote.text.trim()}</Text>
                       </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
+
+                      {chapterNote.annotation && (
+                        <div className={clsx(
+                          'rounded-md p-3 ring-1 ring-inset mt-2 rounded-tl-none',
+                          hasColorSupport
+                            ? colorClasses?.ring
+                            : 'ring-lime-600 dark:ring-lime-600 bg-lime-50 dark:bg-lime-950'
+                        )}>
+                          <Text>{chapterNote.annotation.trim()}</Text>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 

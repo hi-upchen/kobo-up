@@ -75,6 +75,7 @@ export interface IBookHighlightNAnnotation {
   text: string;
   type: string;
   volumeId: string;
+  color?: number | null;
 }
 
 export interface KoboUserDetails {

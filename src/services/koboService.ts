@@ -1,10 +1,10 @@
 import { APP_CONSTANTS } from '../constants/appConstants'
 import type { IBook, INote, IHighlight, IBookHighlightNAnnotation, IBookChapter } from '../types/kobo'
 import { ErrorService } from './errorService'
-import { 
-  connKoboDB, 
-  checkIsKoboDB, 
-  getBookList, 
+import {
+  connKoboDB,
+  checkIsKoboDB,
+  getBookList,
   getHighlightNAnnotationList,
   getBook,
   getChaptersWithNotes
@@ -55,7 +55,7 @@ export class KoboService {
 
       // Initialize database connection using existing KoboDB functions
       const db = await connKoboDB(file)
-      
+
       // Validate it's actually a Kobo database
       const isKoboDb = await checkIsKoboDB(db)
       if (!isKoboDb) {
@@ -89,13 +89,14 @@ export class KoboService {
           'loading'
         )
       }
-      
+
       // Create a File object from the ArrayBuffer
       const blob = new Blob([storedArrayBuffer], { type: 'application/x-sqlite3' })
       const file = new File([blob], 'KoboReader.sqlite', { type: 'application/x-sqlite3' })
-      
+
       // Initialize database
       const db = await connKoboDB(file)
+
       this.database = db
 
     } catch (error) {
