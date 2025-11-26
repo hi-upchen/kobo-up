@@ -1,4 +1,5 @@
 import { IBook, IBookChapter } from '@/types/kobo'
+import { getColorEmoji } from './koboColors'
 
 export const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookChapter[]): string => {
   let content = ``
@@ -14,7 +15,9 @@ export const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookC
       content += '\n';
       chapter.notes.forEach((chapterNote) => {
         if (chapterNote.text) {
-          content += `* ${chapterNote.text.replace(/\r?\n|\r/g, '').trim()}\n`;
+          const emoji = getColorEmoji(chapterNote.color);
+          const prefix = emoji ? `${emoji} ` : '';
+          content += `* ${prefix}${chapterNote.text.replace(/\r?\n|\r/g, '').trim()}\n`;
         }
         if (chapterNote.annotation) {
           content += `> ${chapterNote.annotation.replace(/\r?\n|\r/g, '\n> ').trim()}\n`;

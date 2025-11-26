@@ -27,6 +27,19 @@ export interface HighlightColorClasses {
  * // Returns: { light: 'bg-yellow-100', dark: 'dark:bg-yellow-900/30', ring: 'ring-yellow-400 dark:ring-yellow-500' }
  * ```
  */
+/**
+ * Returns a circle emoji for a given Kobo highlight color code
+ */
+export function getColorEmoji(colorCode?: number | null): string {
+  switch (colorCode) {
+    case 0: return '🟡'; // Yellow
+    case 1: return '🔴'; // Pink
+    case 2: return '🔵'; // Blue
+    case 3: return '🟢'; // Green
+    default: return '';
+  }
+}
+
 export function getHighlightColorClasses(colorCode?: number | null): HighlightColorClasses {
   switch (colorCode) {
     case 0: // Yellow
