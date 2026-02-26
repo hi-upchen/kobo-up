@@ -31,7 +31,7 @@ export function NotesSection({
   return (
     <>
       <div className="mt-6 flex items-center justify-between mb-2">
-        <Text className='text-zinc-500 dark:text-zinc-400'>{notes.length} highlghts</Text>
+        <Text className='text-zinc-500 dark:text-zinc-400'>{notes.length} annotations</Text>
         <NotesExportDropdown 
           book={book} 
           bookChapters={bookChapters} 

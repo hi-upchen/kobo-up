@@ -78,6 +78,14 @@ export default function LandingPage() {
         throw new Error('Kobo database file not found in selected directory')
       }
 
+      // Find and store markup files (handwriting annotations)
+      const markupFiles = await findMarkupFiles(directoryHandle)
+      const { clearMarkupFiles, saveMarkupFiles } = await import('@/services/markupService')
+      await clearMarkupFiles()
+      if (markupFiles.length > 0) {
+        await saveMarkupFiles(markupFiles)
+      }
+
       // Get file from handle and process
       const file = await dbFileHandle.getFile()
       await handleDatabaseSelect(file)
@@ -112,7 +120,7 @@ export default function LandingPage() {
           </HeroHeading>
           
           <Text className="mt-6 text-pretty text-lg font-medium sm:text-xl/8 text-center">
-            Works with every book—purchased or sideloaded. No technical knowledge needed.
+            Highlights, notes, and handwritten annotations—all in one place. No technical knowledge needed.
           </Text>
           
           <Text className="mt-4 text-sm text-gray-600 text-center">
@@ -135,7 +143,10 @@ export default function LandingPage() {
           </div>
 
           {/* New Feature Notice */}
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center space-y-1">
+            <Text className="text-sm text-gray-600 dark:text-gray-400">
+              ✨ <span className="font-medium">New:</span> ✏️ Handwriting annotations from Kobo Stylus now display alongside your highlights!
+            </Text>
             <Text className="text-sm text-gray-600 dark:text-gray-400">
               ✨ <span className="font-medium">New:</span> 🟡🔴🔵🟢 highlight colors now display and export!
             </Text>
@@ -312,11 +323,11 @@ export default function LandingPage() {
 
             <div className="text-center p-6">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600">
-                💻
+                ✏️
               </div>
-              <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Universal Compatibility</h3>
+              <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Stylus Handwriting Support</h3>
               <Text className="mt-2 text-sm leading-6">
-                Works on Windows, Mac, and Linux. Compatible with all Kobo models from the last decade. If it runs a modern browser, it runs Kobo Note Up.
+                Own a Kobo with stylus support? Your handwritten notes now appear right alongside text highlights—view full page screenshots with your ink strokes overlaid.
               </Text>
             </div>
           </div>
@@ -538,4 +549,71 @@ async function findKoboDBInDirectory(
   }
   
   return null
+}
+
+async function findMarkupFiles(
+  directoryHandle: FileSystemDirectoryHandle
+): Promise<{ bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[]> {
+  const markupFiles: { bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[] = [];
+
+  const koboFolderNames = ['.kobo', '_kobo'];
+  let markupsDir: FileSystemDirectoryHandle | null = null;
+
+  for (const koboName of koboFolderNames) {
+    try {
+      const koboDir = await directoryHandle.getDirectoryHandle(koboName);
+      markupsDir = await koboDir.getDirectoryHandle('markups');
+      break;
+    } catch {
+      // Folder not found, try next
+    }
+  }
+
+  if (!markupsDir) {
+    try {
+      markupsDir = await directoryHandle.getDirectoryHandle('markups');
+    } catch {
+      // No markups directory found
+    }
+  }
+
+  if (!markupsDir) {
+    return markupFiles;
+  }
+
+  const svgFiles = new Map<string, FileSystemFileHandle>();
+  const jpgFiles = new Map<string, FileSystemFileHandle>();
+
+  for await (const entry of markupsDir.values()) {
+    if (entry.kind !== 'file') continue;
+    const name = entry.name;
+    const dotIndex = name.lastIndexOf('.');
+    if (dotIndex === -1) continue;
+    const baseName = name.substring(0, dotIndex);
+    const ext = name.substring(dotIndex + 1).toLowerCase();
+
+    if (ext === 'svg') {
+      svgFiles.set(baseName, entry as FileSystemFileHandle);
+    } else if (ext === 'jpg' || ext === 'jpeg') {
+      jpgFiles.set(baseName, entry as FileSystemFileHandle);
+    }
+  }
+
+  const svgEntries = Array.from(svgFiles.entries());
+  for (const [bookmarkId, svgHandle] of svgEntries) {
+    const jpgHandle = jpgFiles.get(bookmarkId);
+    if (!jpgHandle) continue;
+
+    try {
+      const svgFile = await svgHandle.getFile();
+      const jpgFile = await jpgHandle.getFile();
+      const svg = await svgFile.arrayBuffer();
+      const jpg = await jpgFile.arrayBuffer();
+      markupFiles.push({ bookmarkId, svg, jpg });
+    } catch (error) {
+      console.warn(`Failed to read markup files for ${bookmarkId}:`, error);
+    }
+  }
+
+  return markupFiles;
 }

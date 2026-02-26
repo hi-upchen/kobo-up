@@ -125,8 +125,10 @@ export class KoboService {
           const highlightsAndNotes = await getHighlightNAnnotationList(this.database, book.contentId)
           
           // Separate highlights from notes
-          const highlights = highlightsAndNotes.filter(item => item.annotation === null || item.annotation === '')
-          const notes = highlightsAndNotes.filter(item => item.annotation !== null && item.annotation !== '')
+          const markups = highlightsAndNotes.filter(item => item.type === 'markup')
+          const textItems = highlightsAndNotes.filter(item => item.type !== 'markup')
+          const highlights = textItems.filter(item => item.annotation === null || item.annotation === '')
+          const notes = textItems.filter(item => item.annotation !== null && item.annotation !== '')
           
           // Transform book to our interface
           const transformedBook: IBook = {
@@ -137,7 +139,7 @@ export class KoboService {
             isbn: book.isbn || undefined,
             dateCreated: book.releaseDate || undefined,
             lastRead: book.lastRead || undefined,
-            totalHighlights: highlights.length,
+            totalHighlights: highlights.length + markups.length,
             totalNotes: notes.length
           }
           
@@ -370,6 +372,10 @@ export class KoboService {
       // Clear IndexedDB
       if (typeof indexedDB !== 'undefined') {
         await indexedDB.deleteDatabase('KoboDB')
+
+        // Also clear markup files
+        const { clearMarkupFiles } = await import('@/services/markupService')
+        await clearMarkupFiles()
       }
     } catch (error) {
       console.warn('Failed to clear stored data:', error)

@@ -238,7 +238,7 @@ export async function getHighlightNAnnotationList(db: Database, contentId: strin
       T.StartContainerPath as 'startContainerPath',
       ${hasColor ? "IFNULL(T.Color, NULL) as 'color'" : "NULL as 'color'"}
     FROM content AS B, Bookmark AS T
-    WHERE B.ContentID = T.VolumeID AND T.Text != '' AND T.Hidden = 'false' AND B.ContentID = ?
+    WHERE B.ContentID = T.VolumeID AND (T.Text != '' OR T.Type = 'markup') AND T.Hidden = 'false' AND B.ContentID = ?
     ORDER BY T.DateCreated DESC;
   `;
 
@@ -325,10 +325,16 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
           || chapter.contentId.includes(note.contentId);
       })
       .sort((a, b) => {
-        const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
-        const bStartPath = padNumbersToThreeDigits(b.startContainerPath);
+        // Normalize startContainerPath by removing backslash escapes
+        // (markup bookmarks use "span#kobo.17.1", text highlights use "span#kobo\.17\.1")
+        const aStartPath = padNumbersToThreeDigits((a.startContainerPath || '').replace(/\\/g, ''));
+        const bStartPath = padNumbersToThreeDigits((b.startContainerPath || '').replace(/\\/g, ''));
 
         if (aStartPath === bStartPath) {
+          // On the same page, show handwriting before text highlights
+          if (a.type !== b.type) {
+            return a.type === 'markup' ? -1 : 1;
+          }
           return a.startOffset - b.startOffset;
         }
         return aStartPath.localeCompare(bStartPath);
@@ -355,10 +361,13 @@ export async function getChaptersWithNotes(db: Database, contentId: string): Pro
       volumeIndex: 999,
       depth: 1,
       notes: fetchedNotes.sort((a, b) => {
-        const aStartPath = padNumbersToThreeDigits(a.startContainerPath);
-        const bStartPath = padNumbersToThreeDigits(b.startContainerPath);
+        const aStartPath = padNumbersToThreeDigits((a.startContainerPath || '').replace(/\\/g, ''));
+        const bStartPath = padNumbersToThreeDigits((b.startContainerPath || '').replace(/\\/g, ''));
 
         if (aStartPath === bStartPath) {
+          if (a.type !== b.type) {
+            return a.type === 'markup' ? -1 : 1;
+          }
           return a.startOffset - b.startOffset;
         }
         return aStartPath.localeCompare(bStartPath);

@@ -14,7 +14,9 @@ export const generateMarkdownContent = (book: IBook, bookChapterAndNotes: IBookC
     if (chapter.notes && chapter.notes.length > 0) {
       content += '\n';
       chapter.notes.forEach((chapterNote) => {
-        if (chapterNote.text) {
+        if (chapterNote.type === 'markup') {
+          content += `* [Handwriting annotation]\n`;
+        } else if (chapterNote.text) {
           const emoji = getColorEmoji(chapterNote.color);
           const prefix = emoji ? `${emoji} ` : '';
           content += `* ${prefix}${chapterNote.text.replace(/\r?\n|\r/g, '').trim()}\n`;
