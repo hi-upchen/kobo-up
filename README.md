@@ -36,7 +36,7 @@ A free, browser-based tool that **actually exports highlights from ALL your book
 ## 🚀 Quick Start - Export Kobo Highlights in 5 Steps
 
 1. **Connect** your Kobo e-reader to your computer via USB
-2. **Open** [Kobo Note Up](https://kobo-up.runawayup.com) in Chrome, Edge, or Opera
+2. **Open** [Kobo Note Up](https://kobo-up.runawayup.com) in any modern browser (Chrome, Edge, Firefox, or Safari)
 3. **Select** your Kobo device folder when prompted
 4. **Browse** your books and highlights (automatically extracted)
 5. **Export** to Markdown or text format
@@ -55,13 +55,13 @@ That's it! No installation, no account, no data uploaded anywhere.
 
 ## 🖥️ Browser Compatibility
 
-| Browser | Support | Why? |
+| Browser | Support | How? |
 |---------|---------|------|
-| Chrome ✅ | Full Support | Has File System Access API |
-| Edge ✅ | Full Support | Has File System Access API |
-| Opera ✅ | Full Support | Has File System Access API |
-| Safari ❌ | Not Supported | Lacks required API |
-| Firefox ❌ | Not Supported | Lacks required API |
+| Chrome ✅ | Full Support | Select Kobo root folder directly |
+| Edge ✅ | Full Support | Select Kobo root folder directly |
+| Firefox ✅ | Full Support | Select .kobo folder on device |
+| Safari ✅ | Full Support | Select .kobo folder on device |
+| Opera ✅ | Full Support | Select Kobo root folder directly |
 
 ## 📋 How to Find Your Kobo Database
 
@@ -135,8 +135,8 @@ Kobo's built-in export only works with books purchased from their store. Sideloa
 ### Is it safe to use? Will it damage my Kobo?
 Absolutely safe! We only READ your database, never write to it. Your Kobo device remains untouched. All processing happens in your browser.
 
-### Why doesn't it work in Safari or Firefox?
-These browsers don't support the File System Access API needed to automatically find your Kobo database. Use Chrome, Edge, or Opera for the best experience.
+### How do I use this with Firefox or Safari?
+Firefox and Safari are fully supported! When prompted, select the `.kobo` folder inside your Kobo device (press ⌘+Shift+. on Mac or Ctrl+H on Windows to show hidden folders). Chrome and Edge can select the root folder directly.
 
 ### Can I export highlights from specific books only?
 Yes! You can browse your library and export individual books or export your entire library at once.

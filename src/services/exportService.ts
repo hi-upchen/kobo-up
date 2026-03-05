@@ -130,39 +130,6 @@ ${book.dateCreated ? `**Date Added:** ${book.dateCreated}` : ''}
   }
 
   /**
-   * Generate plain text content from books array
-   */
-  static generateText(books: IBook[]): string {
-    if (books.length === 0) {
-      return `Kobo Books Export
-${'='.repeat(20)}
-
-No books found in your library.
-
----
-Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
-    }
-
-    let content = `Kobo Books Export\n${'='.repeat(20)}\n\n`
-    content += `Total books: ${books.length}\n\n`
-    
-    books.forEach((book, index) => {
-      content += `${index + 1}. ${book.title}\n`
-      content += `   Author: ${book.author || 'Unknown'}\n`
-      content += `   Highlights: ${book.totalHighlights}\n`
-      content += `   Notes: ${book.totalNotes}\n`
-      if (book.dateCreated) {
-        content += `   Date Added: ${book.dateCreated}\n`
-      }
-      content += '\n'
-    })
-    
-    content += `\nExported from Kobo Note Up on ${new Date().toLocaleDateString()}`
-    
-    return content
-  }
-
-  /**
    * Export content as file with specified name and MIME type
    */
   static exportAsFile(content: string, filename: string, mimeType: string): void {
@@ -183,15 +150,6 @@ Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
   }
 
   /**
-   * Export books as plain text file
-   */
-  static exportBooksToText(books: IBook[]): void {
-    const content = this.generateText(books)
-    const filename = this.generateFilename('kobo-books-export', 'txt')
-    this.downloadFile(content, filename)
-  }
-
-  /**
    * Generate markdown content for a single book
    */
   static generateSingleBookMarkdown(book: IBook): string {
@@ -206,24 +164,6 @@ Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
     markdown += `*Exported from Kobo Note Up on ${new Date().toLocaleDateString()}*`
     
     return markdown
-  }
-
-  /**
-   * Generate plain text content for a single book
-   */
-  static generateSingleBookText(book: IBook): string {
-    const title = book.title || book.bookTitle || 'Unknown Title'
-    let content = `${title}\n${'='.repeat(title.length)}\n\n`
-    content += `Author: ${book.author || 'Unknown'}\n`
-    content += `Highlights: ${book.totalHighlights}\n`
-    content += `Notes: ${book.totalNotes}\n`
-    if (book.dateCreated) {
-      content += `Date Added: ${book.dateCreated}\n`
-    }
-    content += `\n---\n\n`
-    content += `Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
-    
-    return content
   }
 
   /**
@@ -243,9 +183,9 @@ Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
   /**
    * Export books as ZIP archive with separate files
    */
-  static async exportBooksAsZip(books: IBook[], format: 'markdown' | 'text'): Promise<void> {
+  static async exportBooksAsZip(books: IBook[]): Promise<void> {
     const zip = new JSZip()
-    const extension = format === 'markdown' ? 'md' : 'txt'
+    const extension = 'md'
     
     // Load full content for each book and add to ZIP
     for (const bookFromList of books) {
@@ -298,9 +238,9 @@ Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
   /**
    * Export books as single combined file (concatenated content)
    */
-  static async exportBooksAsCombinedFile(books: IBook[], format: 'markdown' | 'text', exportMode: 'all' | 'selected'): Promise<void> {
+  static async exportBooksAsCombinedFile(books: IBook[], exportMode: 'all' | 'selected'): Promise<void> {
     let combinedContent = ''
-    const extension = format === 'markdown' ? 'md' : 'txt'
+    const extension = 'md'
     
     // Load and concatenate content for all books
     for (let i = 0; i < books.length; i++) {
@@ -350,7 +290,6 @@ Exported from Kobo Note Up on ${new Date().toLocaleDateString()}`
       : `kobo-${books.length}-books-export-${timestamp}.${extension}`
     
     // Download the combined file
-    const mimeType = format === 'markdown' ? 'text/markdown' : 'text/plain'
-    this.exportAsFile(combinedContent, filename, mimeType)
+    this.exportAsFile(combinedContent, filename, 'text/markdown')
   }
 }

@@ -7,7 +7,7 @@ const faqs = [
   {
     question: "How do I export Kobo highlights and notes?",
     answer:
-      "1. Connect your Kobo device to your computer via USB. 2. Open this tool in Chrome, Edge, or Opera browser. 3. Select your Kobo device folder. 4. Our tool automatically finds your annotations database. 5. Browse books and export highlights to Markdown or TXT format.",
+      "1. Connect your Kobo device to your computer via USB. 2. Open this tool in any modern browser (Chrome, Edge, Firefox, or Safari). 3. Select your Kobo device folder. 4. Our tool automatically finds your annotations database. 5. Browse books and export highlights to Markdown format.",
   },
   {
     question: "Can I export highlights from sideloaded Kobo books?",
@@ -27,7 +27,7 @@ const faqs = [
   {
     question: "Which browsers support Kobo export functionality?",
     answer:
-      "Chrome, Edge, and Opera browsers are supported. These browsers have the File System Access API needed to automatically detect your Kobo database. Safari and Firefox don't currently support this feature.",
+      "All modern browsers are supported. Chrome and Edge offer the smoothest experience with direct folder access. Firefox and Safari also work — just select the .kobo folder on your device (press ⌘+Shift+. on Mac or Ctrl+H on Windows to reveal hidden folders).",
   },
   {
     question: "Do I need to install software to export Kobo notes?",

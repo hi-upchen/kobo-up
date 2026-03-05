@@ -39,18 +39,18 @@ export function ExportActionBar({
     setIsModalOpen(true)
   }
 
-  const handleExportConfirm = async (format: ExportFormat, structure: ExportStructure) => {
-    const booksToExport = exportMode === 'all' 
-      ? booksWithContent 
+  const handleExportConfirm = async (_format: ExportFormat, structure: ExportStructure) => {
+    const booksToExport = exportMode === 'all'
+      ? booksWithContent
       : books.filter(book => selectedBooks.has(book.contentId))
 
     try {
       if (structure === 'zip') {
         // Export as ZIP archive with separate files
-        await ExportService.exportBooksAsZip(booksToExport, format)
+        await ExportService.exportBooksAsZip(booksToExport)
       } else {
         // Export as single combined file
-        await ExportService.exportBooksAsCombinedFile(booksToExport, format, exportMode)
+        await ExportService.exportBooksAsCombinedFile(booksToExport, exportMode)
       }
     } catch (error) {
       console.error('Export failed:', error)

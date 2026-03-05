@@ -47,6 +47,3 @@ export const downloadMarkdownFile = (filename: string, content: string) => {
   downloadFile(filename, content, 'text/markdown');
 }
 
-export const downloadTxtFile = (filename: string, content: string) => {
-  downloadFile(filename, content, 'text/plain');
-}

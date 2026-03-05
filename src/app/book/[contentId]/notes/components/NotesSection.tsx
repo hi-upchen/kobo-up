@@ -10,15 +10,19 @@ interface NotesSectionProps {
   bookChapters: IBookChapter[] | null
   book: IBook | null
   sponsorShouldBeShownOnChapterIdx: number | null
-  onExport: (book: IBook, chapters: IBookChapter[], format: 'markdown' | 'txt') => void
+  onExportMarkdown: (book: IBook, chapters: IBookChapter[]) => void
+  onExportNotion: (book: IBook, chapters: IBookChapter[]) => void
+  onDisconnectNotion?: () => void
 }
 
-export function NotesSection({ 
-  notes, 
-  bookChapters, 
-  book, 
-  sponsorShouldBeShownOnChapterIdx, 
-  onExport 
+export function NotesSection({
+  notes,
+  bookChapters,
+  book,
+  sponsorShouldBeShownOnChapterIdx,
+  onExportMarkdown,
+  onExportNotion,
+  onDisconnectNotion
 }: NotesSectionProps) {
   if (!notes || !bookChapters || notes.length === 0) {
     return (
@@ -32,10 +36,12 @@ export function NotesSection({
     <>
       <div className="mt-6 flex items-center justify-between mb-2">
         <Text className='text-zinc-500 dark:text-zinc-400'>{notes.length} annotations</Text>
-        <NotesExportDropdown 
-          book={book} 
-          bookChapters={bookChapters} 
-          onExport={onExport} 
+        <NotesExportDropdown
+          book={book}
+          bookChapters={bookChapters}
+          onExportMarkdown={onExportMarkdown}
+          onExportNotion={onExportNotion}
+          onDisconnectNotion={onDisconnectNotion}
         />
       </div>
       <Divider />

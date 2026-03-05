@@ -12,15 +12,27 @@ import { HeroHeading, Heading, Subheading } from '@/components/heading'
 import { Text } from '@/components/text'
 import FAQ from '@/app/components/FAQ'
 
+type FolderPickerSupport = 'directory-api' | 'webkitdirectory' | 'file-only'
+
 export default function LandingPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isDirectoryPickerSupported, setIsDirectoryPickerSupported] = useState(true)
+  const [supportLevel, setSupportLevel] = useState<FolderPickerSupport>('directory-api')
 
   useEffect(() => {
-    // Check if File System Access API is supported
-    setIsDirectoryPickerSupported('showDirectoryPicker' in window)
+    // Detect folder picker support level
+    if ('showDirectoryPicker' in window) {
+      setSupportLevel('directory-api')
+    } else {
+      // Check webkitdirectory support
+      const testInput = document.createElement('input')
+      if ('webkitdirectory' in testInput) {
+        setSupportLevel('webkitdirectory')
+      } else {
+        setSupportLevel('file-only')
+      }
+    }
 
     // Check if there's already a stored database
     const checkStoredDatabase = async () => {
@@ -59,8 +71,20 @@ export default function LandingPage() {
     }
   }
 
+  const processKoboFiles = async (
+    sqliteFile: File,
+    markupFiles: { bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[]
+  ) => {
+    const { clearMarkupFiles, saveMarkupFiles } = await import('@/services/markupService')
+    await clearMarkupFiles()
+    if (markupFiles.length > 0) {
+      await saveMarkupFiles(markupFiles)
+    }
+    await handleDatabaseSelect(sqliteFile)
+  }
+
   const handleDirectorySelect = async () => {
-    if (!('showDirectoryPicker' in window)) {
+    if (supportLevel !== 'directory-api') {
       setError('File system access is not supported in your browser.')
       return
     }
@@ -71,7 +95,7 @@ export default function LandingPage() {
     try {
       // Use the File System Access API
       const directoryHandle = await (window as Window & { showDirectoryPicker(): Promise<FileSystemDirectoryHandle> }).showDirectoryPicker()
-      
+
       // Find Kobo database file in the directory
       const dbFileHandle = await findKoboDBInDirectory(directoryHandle)
       if (!dbFileHandle) {
@@ -80,15 +104,33 @@ export default function LandingPage() {
 
       // Find and store markup files (handwriting annotations)
       const markupFiles = await findMarkupFiles(directoryHandle)
-      const { clearMarkupFiles, saveMarkupFiles } = await import('@/services/markupService')
-      await clearMarkupFiles()
-      if (markupFiles.length > 0) {
-        await saveMarkupFiles(markupFiles)
-      }
 
       // Get file from handle and process
       const file = await dbFileHandle.getFile()
-      await handleDatabaseSelect(file)
+      await processKoboFiles(file, markupFiles)
+
+    } catch (error) {
+      const errorMessage = ErrorService.getErrorMessage(error as Error)
+      setError(errorMessage)
+      ErrorService.logError(error as Error)
+
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleWebkitDirectorySelect = async (files: FileList) => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const sqliteFile = findKoboDBInFileList(files)
+      if (!sqliteFile) {
+        throw new Error('Kobo database file not found in selected directory')
+      }
+
+      const markupFiles = await findMarkupFilesInFileList(files)
+      await processKoboFiles(sqliteFile, markupFiles)
 
     } catch (error) {
       const errorMessage = ErrorService.getErrorMessage(error as Error)
@@ -197,7 +239,7 @@ export default function LandingPage() {
               </div>
               <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-gray-100">Click and Auto-Detect</h3>
               <Text className="mt-2 text-base leading-6">
-                On Chrome or Edge, simply select your Kobo's root folder. Our smart detection instantly finds your database—no searching, no guessing, no technical knowledge required.
+                Simply select your Kobo&apos;s folder and our smart detection instantly finds your database—no searching, no guessing, no technical knowledge required. Works with Chrome, Edge, Firefox, and Safari.
               </Text>
             </div>
 
@@ -225,7 +267,7 @@ export default function LandingPage() {
               Connect your Kobo and select root folder
             </Text>
             <Text className="mt-2 text-sm text-gray-500">
-              Works with Chrome, Edge, and Opera browsers
+              Works with all modern browsers
             </Text>
           </div>
 
@@ -241,9 +283,13 @@ export default function LandingPage() {
             </div>
           ) : (
             <DatabaseSelector
-              isDirectoryPickerSupported={isDirectoryPickerSupported}
-              onFileSelect={handleDatabaseSelect}
+              supportLevel={supportLevel}
               onDirectorySelect={handleDirectorySelect}
+              onWebkitDirectorySelect={handleWebkitDirectorySelect}
+              onFileSelect={handleDatabaseSelect}
+              onEmptyDirectory={() => setError(
+                'Firefox cannot read the root folder of USB devices. Please select the .kobo folder inside your Kobo device instead. To show hidden folders, press ⌘+Shift+. on Mac or enable "Show hidden files" in the folder options on Windows. Alternatively, use Chrome or Edge to select the root folder directly.'
+              )}
             />
           )}
 
@@ -616,4 +662,64 @@ async function findMarkupFiles(
   }
 
   return markupFiles;
+}
+
+function findKoboDBInFileList(files: FileList): File | null {
+  const possibleNames = ['KoboReader.sqlite', 'Kobo.sqlite']
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    for (const name of possibleNames) {
+      if (file.name === name) {
+        return file
+      }
+    }
+  }
+
+  return null
+}
+
+async function findMarkupFilesInFileList(
+  files: FileList
+): Promise<{ bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[]> {
+  const markupFiles: { bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[] = []
+
+  // Collect SVG and JPG files from .kobo/markups/ path
+  const svgFiles = new Map<string, File>()
+  const jpgFiles = new Map<string, File>()
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const relativePath = file.webkitRelativePath || ''
+
+    // Match files in .kobo/markups/ or _kobo/markups/ directory
+    const markupMatch = relativePath.match(/[./_]kobo\/markups\/([^/]+)\.(svg|jpe?g)$/i)
+    if (!markupMatch) continue
+
+    const baseName = markupMatch[1]
+    const ext = markupMatch[2].toLowerCase()
+
+    if (ext === 'svg') {
+      svgFiles.set(baseName, file)
+    } else {
+      jpgFiles.set(baseName, file)
+    }
+  }
+
+  // Pair SVG and JPG files by basename
+  const svgEntries = Array.from(svgFiles.entries())
+  for (const [bookmarkId, svgFile] of svgEntries) {
+    const jpgFile = jpgFiles.get(bookmarkId)
+    if (!jpgFile) continue
+
+    try {
+      const svg = await svgFile.arrayBuffer()
+      const jpg = await jpgFile.arrayBuffer()
+      markupFiles.push({ bookmarkId, svg, jpg })
+    } catch (error) {
+      console.warn(`Failed to read markup files for ${bookmarkId}:`, error)
+    }
+  }
+
+  return markupFiles
 }

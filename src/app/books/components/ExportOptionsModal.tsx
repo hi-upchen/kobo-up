@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Dialog, DialogActions, DialogBody, DialogDescription, DialogTitle } from '@/components/dialog'
 
-export type ExportFormat = 'markdown' | 'text'
+export type ExportFormat = 'markdown'
 export type ExportStructure = 'single' | 'zip'
 
 interface ExportOptionsModalProps {
@@ -21,15 +21,13 @@ export function ExportOptionsModal({
   onConfirm,
   onClose
 }: ExportOptionsModalProps) {
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('markdown')
   const [selectedStructure, setSelectedStructure] = useState<ExportStructure>('zip')
 
   const handleDownload = () => {
-    onConfirm(selectedFormat, selectedStructure)
+    onConfirm('markdown', selectedStructure)
   }
 
   const handleClose = () => {
-    setSelectedFormat('markdown')
     setSelectedStructure('zip')
     onClose()
   }
@@ -47,48 +45,6 @@ export function ExportOptionsModal({
       
       <DialogBody>
         <div className="space-y-6">
-          {/* Format Selection Group */}
-          <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-zinc-100 mb-3">
-              Format
-            </label>
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
-                <input
-                  type="radio"
-                  name="format"
-                  value="markdown"
-                  checked={selectedFormat === 'markdown'}
-                  onChange={() => setSelectedFormat('markdown')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-zinc-100">Markdown (.md)</div>
-                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-                    Perfect for Notion, Obsidian, and documentation platforms
-                  </div>
-                </div>
-              </label>
-              
-              <label className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 cursor-pointer hover:border-gray-300 dark:hover:border-zinc-600 transition-colors">
-                <input
-                  type="radio"
-                  name="format"
-                  value="text"
-                  checked={selectedFormat === 'text'}
-                  onChange={() => setSelectedFormat('text')}
-                  className="mt-0.5 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-zinc-100">Plain Text (.txt)</div>
-                  <div className="text-sm text-gray-500 dark:text-zinc-400 mt-1">
-                    Universal compatibility across all applications
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
           {/* Structure Selection Group */}
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-zinc-100 mb-3">

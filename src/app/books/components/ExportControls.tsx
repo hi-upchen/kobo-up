@@ -22,7 +22,7 @@ export function ExportControls({
   const [isExporting, setIsExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
-  const handleExport = async (books: IBook[], format: 'markdown' | 'json' | 'text') => {
+  const handleExport = async (books: IBook[], format: 'markdown' | 'json') => {
     if (books.length === 0) return
 
     setIsExporting(true)
@@ -36,9 +36,6 @@ export function ExportControls({
         case 'json':
           ExportService.exportBooksToJson(books)
           break
-        case 'text':
-          ExportService.exportBooksToText(books)
-          break
       }
     } catch (error) {
       const errorMessage = ErrorService.getErrorMessage(error as Error)
@@ -49,11 +46,11 @@ export function ExportControls({
     }
   }
 
-  const handleExportSelected = (format: 'markdown' | 'json' | 'text') => {
+  const handleExportSelected = (format: 'markdown' | 'json') => {
     handleExport(selectedBooks, format)
   }
 
-  const handleExportAll = (format: 'markdown' | 'json' | 'text') => {
+  const handleExportAll = (format: 'markdown' | 'json') => {
     handleExport(allBooks, format)
   }
 
@@ -123,14 +120,6 @@ export function ExportControls({
                 disabled={totalCount === 0}
               >
                 Export All (JSON)
-              </Button>
-              <Button
-                color="zinc"
-                onClick={() => handleExportAll('text')}
-                className="mt-2 sm:mt-0 w-full sm:w-auto"
-                disabled={totalCount === 0}
-              >
-                Export All (TXT)
               </Button>
             </>
           )}
