@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
   let bookData: ExportBookData
 
   try {
-    // Check Content-Length before reading body
+    // Best-effort size check — Vercel enforces the hard limit at the infra level.
+    // Content-Length can be absent or spoofed; this rejects obviously oversized requests early.
     const contentLength = parseInt(request.headers.get('content-length') || '0', 10)
     if (contentLength > MAX_BODY_SIZE) {
       return NextResponse.json(
@@ -134,6 +135,21 @@ export async function POST(request: NextRequest) {
   }
 
   const imageUploads = bookData.imageUploads ?? {}
+  const imageEntries = Object.entries(imageUploads)
+  if (imageEntries.length > 200) {
+    return NextResponse.json(
+      { error: 'Too many image uploads (max 200)' },
+      { status: 400 }
+    )
+  }
+  for (const [, id] of imageEntries) {
+    if (!UUID_RE.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid fileUploadId format in imageUploads' },
+        { status: 400 }
+      )
+    }
+  }
 
   // Use streaming response to report progress
   const encoder = new TextEncoder()

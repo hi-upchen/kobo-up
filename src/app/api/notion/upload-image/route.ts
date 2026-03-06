@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  if (file.type && !ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: 'Only image files are accepted' },
+      { status: 400 }
+    )
+  }
+
   if (file.size > MAX_IMAGE_SIZE) {
     return NextResponse.json(
       { error: 'File too large (max 20MB)' },

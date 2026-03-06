@@ -113,17 +113,26 @@ export async function exportBookToNotion(
     }
   }
 
-  // 4. Upload images to Notion one by one
+  // 4. Upload images to Notion with bounded concurrency
   const imageUploads: Record<string, string> = {}
   const compositedEntries = Array.from(composited.entries())
+  const totalUploads = compositedEntries.length
+  let uploadedCount = 0
 
-  for (let i = 0; i < compositedEntries.length; i++) {
-    const [bookmarkId, blob] = compositedEntries[i]
-    onProgress?.('Uploading images', i + 1, compositedEntries.length)
-    const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
-    if (fileUploadId) {
-      imageUploads[bookmarkId] = fileUploadId
+  const CONCURRENCY = 3
+  for (let i = 0; i < totalUploads; i += CONCURRENCY) {
+    const batch = compositedEntries.slice(i, i + CONCURRENCY)
+    const results = await Promise.all(
+      batch.map(async ([bookmarkId, blob]) => {
+        const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
+        return { bookmarkId, fileUploadId }
+      })
+    )
+    for (const { bookmarkId, fileUploadId } of results) {
+      if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
     }
+    uploadedCount += batch.length
+    onProgress?.('Uploading images', uploadedCount, totalUploads)
   }
 
   // 5. Send JSON bookData with imageUploads map to export API
