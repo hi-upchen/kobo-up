@@ -24,15 +24,17 @@ export function AppNavbar() {
   const pathname = usePathname()
 
   useEffect(() => {
+    let cancelled = false
     async function checkData() {
       try {
         const result = await KoboService.hasStoredData()
-        setHasData(result)
+        if (!cancelled) setHasData(result)
       } catch {
-        setHasData(false)
+        if (!cancelled) setHasData(false)
       }
     }
     checkData()
+    return () => { cancelled = true }
   }, [pathname])
 
   return (

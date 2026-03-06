@@ -376,6 +376,10 @@ export class KoboService {
           db.close()
           resolve(false)
         }
+        transaction.onabort = () => {
+          db.close()
+          resolve(false)
+        }
       }
       dbRequest.onerror = () => resolve(false)
     })
