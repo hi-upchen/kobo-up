@@ -350,15 +350,35 @@ export class KoboService {
   }
 
   /**
-   * Check if there's stored database data in IndexedDB
+   * Check if there's stored database data in IndexedDB.
+   * Uses count() to avoid loading the full SQLite blob into memory.
    */
   static async hasStoredData(): Promise<boolean> {
-    try {
-      const storedData = await this.getFromIndexedDB()
-      return storedData !== null
-    } catch {
-      return false
-    }
+    if (typeof indexedDB === 'undefined') return false
+    return new Promise((resolve) => {
+      const dbRequest = indexedDB.open('KoboDB', 1)
+      dbRequest.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result
+        if (!db.objectStoreNames.contains('database')) {
+          db.createObjectStore('database')
+        }
+      }
+      dbRequest.onsuccess = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result
+        const transaction = db.transaction(['database'], 'readonly')
+        const store = transaction.objectStore('database')
+        const countRequest = store.count('koboDatabase')
+        countRequest.onsuccess = () => {
+          db.close()
+          resolve(countRequest.result > 0)
+        }
+        countRequest.onerror = () => {
+          db.close()
+          resolve(false)
+        }
+      }
+      dbRequest.onerror = () => resolve(false)
+    })
   }
 
   /**
