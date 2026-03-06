@@ -40,8 +40,8 @@ function buildDividerBlock(): NotionBlock {
 }
 
 function cleanMetaFields(block: NotionBlock): NotionBlock {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _meta, ...cleaned } = block
-  void _meta
   return cleaned
 }
 
@@ -137,10 +137,19 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
 
+    const MAX_BOOK_DATA_SIZE = 5 * 1024 * 1024 // 5MB
+
     const bookDataRaw = formData.get('bookData')
     if (!bookDataRaw || typeof bookDataRaw !== 'string') {
       return NextResponse.json(
         { error: 'Missing bookData field' },
+        { status: 400 }
+      )
+    }
+
+    if (bookDataRaw.length > MAX_BOOK_DATA_SIZE) {
+      return NextResponse.json(
+        { error: 'bookData payload too large' },
         { status: 400 }
       )
     }
@@ -163,9 +172,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const MAX_IMAGE_SIZE = 20 * 1024 * 1024 // 20MB (Notion single_part limit)
+
     // Collect image files keyed as image_{bookmarkId}
     formData.forEach((value, key) => {
       if (key.startsWith('image_') && value instanceof File) {
+        if (value.size > MAX_IMAGE_SIZE) return // skip oversized files
         const bookmarkId = key.replace('image_', '')
         imageFiles.set(bookmarkId, value)
       }
@@ -274,7 +286,7 @@ export async function POST(request: NextRequest) {
           error: `Export failed: ${err instanceof Error ? err.message : 'Unknown error'}. A partial page may have been created in Notion.`,
         })
       } finally {
-        controller.close()
+        try { controller.close() } catch { /* already closed */ }
       }
     },
   })

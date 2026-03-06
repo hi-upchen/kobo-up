@@ -50,9 +50,8 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.NOTION_CLIENT_ID
   const clientSecret = process.env.NOTION_CLIENT_SECRET
-  const redirectUri = process.env.NOTION_REDIRECT_URI
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     redirectBase.searchParams.set('notion', 'error')
     return NextResponse.redirect(redirectBase.toString())
   }
@@ -73,7 +72,8 @@ export async function GET(request: NextRequest) {
         body: JSON.stringify({
           grant_type: 'authorization_code',
           code,
-          redirect_uri: redirectUri,
+          redirect_uri: process.env.NOTION_REDIRECT_URI
+            ?? new URL('/api/notion/callback', request.nextUrl.origin).toString(),
         }),
       }
     )

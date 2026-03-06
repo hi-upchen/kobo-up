@@ -303,7 +303,7 @@ function NotesPageContent() {
                 </svg>
               )}
               <p className="text-sm font-medium">{toast.message}</p>
-              {toast.type === 'success' && toast.notionUrl && (
+              {toast.type === 'success' && toast.notionUrl && toast.notionUrl.startsWith('https://') && (
                 <a
                   href={toast.notionUrl}
                   target="_blank"

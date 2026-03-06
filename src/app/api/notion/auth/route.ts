@@ -6,9 +6,8 @@ const NONCE_COOKIE = 'notion_oauth_nonce'
 
 export async function GET(request: NextRequest) {
   const clientId = process.env.NOTION_CLIENT_ID
-  const redirectUri = process.env.NOTION_REDIRECT_URI
 
-  if (!clientId || !redirectUri) {
+  if (!clientId) {
     return NextResponse.json(
       { error: 'Notion OAuth is not configured' },
       { status: 500 }
@@ -40,6 +39,8 @@ export async function GET(request: NextRequest) {
 
   const authUrl = new URL('https://api.notion.com/v1/oauth/authorize')
   authUrl.searchParams.set('client_id', clientId)
+  const redirectUri = process.env.NOTION_REDIRECT_URI
+    ?? new URL('/api/notion/callback', request.nextUrl.origin).toString()
   authUrl.searchParams.set('redirect_uri', redirectUri)
   authUrl.searchParams.set('response_type', 'code')
   authUrl.searchParams.set('owner', 'user')
