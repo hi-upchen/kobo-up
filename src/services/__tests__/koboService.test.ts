@@ -197,8 +197,37 @@ describe('KoboService', () => {
       ;(KoboDB.getChaptersWithNotes as jest.Mock).mockResolvedValue([])
 
       const result = await KoboService.loadBookChaptersWithNotes('test-book-id')
-      
+
       expect(result).toEqual([])
+    })
+  })
+
+  describe('hasStoredData', () => {
+    it('should return false when indexedDB is not available', async () => {
+      // Jest environment has no indexedDB, so this tests the SSR guard
+      const result = await KoboService.hasStoredData()
+      expect(result).toBe(false)
+    })
+
+    it('should return false when IndexedDB open fails', async () => {
+      const originalIndexedDB = globalThis.indexedDB
+      // Mock indexedDB with a failing open
+      const mockOpen = {
+        onerror: null as ((event: unknown) => void) | null,
+        onsuccess: null as ((event: unknown) => void) | null,
+        onupgradeneeded: null as ((event: unknown) => void) | null,
+      }
+      globalThis.indexedDB = {
+        open: () => {
+          setTimeout(() => mockOpen.onerror?.({}), 0)
+          return mockOpen
+        },
+      } as unknown as IDBFactory
+
+      const result = await KoboService.hasStoredData()
+      expect(result).toBe(false)
+
+      globalThis.indexedDB = originalIndexedDB
     })
   })
 })

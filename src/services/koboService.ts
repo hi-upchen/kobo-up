@@ -365,21 +365,19 @@ export class KoboService {
       }
       dbRequest.onsuccess = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
+        let settled = false
+        const finish = (result: boolean) => {
+          if (settled) return
+          settled = true
+          db.close()
+          resolve(result)
+        }
         const transaction = db.transaction(['database'], 'readonly')
         const store = transaction.objectStore('database')
         const countRequest = store.count('koboDatabase')
-        countRequest.onsuccess = () => {
-          db.close()
-          resolve(countRequest.result > 0)
-        }
-        countRequest.onerror = () => {
-          db.close()
-          resolve(false)
-        }
-        transaction.onabort = () => {
-          db.close()
-          resolve(false)
-        }
+        countRequest.onsuccess = () => finish(countRequest.result > 0)
+        countRequest.onerror = () => finish(false)
+        transaction.onabort = () => finish(false)
       }
       dbRequest.onerror = () => resolve(false)
     })
