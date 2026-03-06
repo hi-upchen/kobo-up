@@ -33,22 +33,7 @@ export default function LandingPage() {
         setSupportLevel('file-only')
       }
     }
-
-    // Check if there's already a stored database
-    const checkStoredDatabase = async () => {
-      try {
-        const storedData = localStorage.getItem('kobo-database')
-        if (storedData) {
-          // If database exists, redirect to books page
-          NavigationService.navigateToBooks(router)
-        }
-      } catch (error) {
-        console.warn('Failed to check stored database:', error)
-      }
-    }
-
-    checkStoredDatabase()
-  }, [router])
+  }, [])
 
   const handleDatabaseSelect = async (file: File) => {
     setIsLoading(true)
