@@ -10,6 +10,8 @@ interface ExportBookData {
   author: string
   chapters: IBookChapter[]
   parentPageId: string
+  /** Map of bookmarkId → Notion fileUploadId (pre-uploaded via /api/notion/upload-image) */
+  imageUploads?: Record<string, string>
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,43 +45,6 @@ function cleanMetaFields(block: NotionBlock): NotionBlock {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { _meta, ...cleaned } = block
   return cleaned
-}
-
-async function tryUploadImage(
-  notion: Client,
-  file: File
-): Promise<string | null> {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const notionAny = notion as any
-    const filename = file.name || 'annotation.jpg'
-
-    // Step 1: Create file upload (single_part for files < 20MB)
-    // Ref: https://developers.notion.com/docs/uploading-small-files
-    const fileUpload = await notionAny.fileUploads.create({
-      mode: 'single_part',
-    })
-    const fileUploadId = fileUpload?.id
-    if (!fileUploadId) throw new Error('File upload creation failed: no ID returned')
-
-    // Step 2: Send the file data
-    const arrayBuffer = await file.arrayBuffer()
-    const blob = new Blob([arrayBuffer], { type: file.type || 'image/jpeg' })
-    await notionAny.fileUploads.send({
-      file_upload_id: fileUploadId,
-      file: {
-        filename,
-        data: blob,
-      },
-    })
-
-    // Step 3: Return ID — attach to block via image block type: 'file_upload'
-    // No complete() needed for single_part mode
-    return fileUploadId
-  } catch (err) {
-    console.error('[Notion upload] Image upload failed:', err instanceof Error ? err.message : err)
-    return null
-  }
 }
 
 function buildNotionImageBlock(fileUploadId: string): NotionBlock {
@@ -120,6 +85,9 @@ async function appendBlocksInBatches(
   return totalCreated
 }
 
+const MAX_BODY_SIZE = 5 * 1024 * 1024 // 5MB
+const UUID_RE = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i
+
 export async function POST(request: NextRequest) {
   const session = await getNotionSession()
   if (!session) {
@@ -132,29 +100,18 @@ export async function POST(request: NextRequest) {
   const notion = new Client({ auth: session.notionAccessToken })
 
   let bookData: ExportBookData
-  const imageFiles = new Map<string, File>()
 
   try {
-    const formData = await request.formData()
-
-    const MAX_BOOK_DATA_SIZE = 5 * 1024 * 1024 // 5MB
-
-    const bookDataRaw = formData.get('bookData')
-    if (!bookDataRaw || typeof bookDataRaw !== 'string') {
+    // Check Content-Length before reading body
+    const contentLength = parseInt(request.headers.get('content-length') || '0', 10)
+    if (contentLength > MAX_BODY_SIZE) {
       return NextResponse.json(
-        { error: 'Missing bookData field' },
+        { error: 'Request payload too large' },
         { status: 400 }
       )
     }
 
-    if (bookDataRaw.length > MAX_BOOK_DATA_SIZE) {
-      return NextResponse.json(
-        { error: 'bookData payload too large' },
-        { status: 400 }
-      )
-    }
-
-    bookData = JSON.parse(bookDataRaw) as ExportBookData
+    bookData = await request.json() as ExportBookData
 
     if (!bookData.bookTitle || !bookData.parentPageId || !bookData.chapters) {
       return NextResponse.json(
@@ -163,28 +120,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate parentPageId is a UUID
-    const UUID_RE = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i
     if (!UUID_RE.test(bookData.parentPageId)) {
       return NextResponse.json(
         { error: 'Invalid parentPageId format' },
-        { status: 400 }
-      )
-    }
-
-    const MAX_IMAGE_SIZE = 20 * 1024 * 1024 // 20MB (Notion single_part limit)
-
-    // Collect image files keyed as image_{bookmarkId}
-    formData.forEach((value, key) => {
-      if (key.startsWith('image_') && value instanceof File) {
-        if (value.size > MAX_IMAGE_SIZE) return // skip oversized files
-        const bookmarkId = key.replace('image_', '')
-        imageFiles.set(bookmarkId, value)
-      }
-    })
-    if (imageFiles.size > 200) {
-      return NextResponse.json(
-        { error: 'Too many image files (max 200)' },
         { status: 400 }
       )
     }
@@ -194,6 +132,8 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
+
+  const imageUploads = bookData.imageUploads ?? {}
 
   // Use streaming response to report progress
   const encoder = new TextEncoder()
@@ -231,30 +171,19 @@ export async function POST(request: NextRequest) {
         // Build blocks from chapters
         const rawBlocks = buildBookPageBlocks(bookData.chapters)
 
-        // Count total markup blocks for progress
-        const markupBlocks = rawBlocks.filter(b => b._meta?.isMarkup)
-        const totalImages = markupBlocks.length
-        let uploadedCount = 0
-
-        // Process markup placeholders: try to upload images
+        // Process markup placeholders: replace with uploaded image blocks
         const processedBlocks: NotionBlock[] = []
         for (const block of rawBlocks) {
           if (aborted) break
           if (block._meta?.isMarkup) {
             const bookmarkId = block._meta.bookmarkId as string
-            const imageFile = imageFiles.get(bookmarkId)
-            uploadedCount++
-            sendEvent({ stage: 'Uploading images', current: uploadedCount, total: totalImages })
-
-            if (imageFile) {
-              const fileUploadId = await tryUploadImage(notion, imageFile)
-              if (fileUploadId) {
-                processedBlocks.push(buildNotionImageBlock(fileUploadId))
-                continue
-              }
+            const fileUploadId = imageUploads[bookmarkId]
+            if (fileUploadId) {
+              processedBlocks.push(buildNotionImageBlock(fileUploadId))
+            } else {
+              // No upload available: keep text placeholder, strip _meta
+              processedBlocks.push(cleanMetaFields(block))
             }
-            // No image or upload failed: keep text placeholder, strip _meta
-            processedBlocks.push(cleanMetaFields(block))
           } else {
             processedBlocks.push(cleanMetaFields(block))
           }

@@ -52,8 +52,28 @@ export async function fetchNotionPages(): Promise<NotionPage[]> {
 }
 
 /**
+ * Upload a single image to Notion via the server-side upload endpoint.
+ * Returns the Notion fileUploadId or null on failure.
+ */
+async function uploadImageToNotion(blob: Blob, filename: string): Promise<string | null> {
+  try {
+    const formData = new FormData()
+    formData.append('file', blob, filename)
+    const res = await fetch('/api/notion/upload-image', {
+      method: 'POST',
+      body: formData,
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.fileUploadId ?? null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Export a book (with chapters and markup images) to a Notion page.
- * Uses SSE streaming to report server-side progress.
+ * Images are uploaded individually first, then bookData is sent as JSON.
  */
 export async function exportBookToNotion(
   book: IBook,
@@ -93,27 +113,34 @@ export async function exportBookToNotion(
     }
   }
 
-  // 4. Build FormData
-  onProgress?.('Preparing export...', 0, 1)
-  const formData = new FormData()
+  // 4. Upload images to Notion one by one
+  const imageUploads: Record<string, string> = {}
+  const compositedEntries = Array.from(composited.entries())
+
+  for (let i = 0; i < compositedEntries.length; i++) {
+    const [bookmarkId, blob] = compositedEntries[i]
+    onProgress?.('Uploading images', i + 1, compositedEntries.length)
+    const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
+    if (fileUploadId) {
+      imageUploads[bookmarkId] = fileUploadId
+    }
+  }
+
+  // 5. Send JSON bookData with imageUploads map to export API
+  onProgress?.('Sending to Notion...', 0, 1)
 
   const bookData = {
     bookTitle: book.bookTitle ?? book.title ?? 'Untitled',
     author: book.author ?? 'Unknown',
     chapters,
     parentPageId,
+    imageUploads,
   }
-  formData.append('bookData', JSON.stringify(bookData))
 
-  Array.from(composited.entries()).forEach(([bookmarkId, blob]) => {
-    formData.append(`image_${bookmarkId}`, blob, `${bookmarkId}.jpg`)
-  })
-
-  // 5. POST to export API and read SSE stream for server-side progress
-  onProgress?.('Sending to Notion...', 0, 1)
   const res = await fetch('/api/notion/export', {
     method: 'POST',
-    body: formData,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bookData),
   })
 
   if (!res.ok) {
