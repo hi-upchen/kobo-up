@@ -2,7 +2,7 @@ import { GoogleTagManager } from '@next/third-parties/google'
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-import { Navbar } from '@/components/navbar'
+import { AppNavbar } from '@/app/components/AppNavbar'
 import { Sidebar } from '@/components/sidebar'
 import { StackedLayout } from '@/components/stacked-layout'
 import Footer from '@/components/Footer';
@@ -27,7 +27,7 @@ export default function RootLayout({
         <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M82SLQZ6" height="0" width="0" style={{ display: "none", visibility: "hidden" }}></iframe></noscript>
 
         <StackedLayout
-          navbar={<Navbar>{/* Your navbar content */}</Navbar>}
+          navbar={<AppNavbar />}
           sidebar={<Sidebar>{/* Your sidebar content */}</Sidebar>}
         >
           <BackgroundShapes />
