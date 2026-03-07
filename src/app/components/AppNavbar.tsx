@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Navbar, NavbarSection, NavbarItem, NavbarSpacer } from '@/components/navbar'
+import { Navbar, NavbarSection, NavbarItem } from '@/components/navbar'
 import { KoboService } from '@/services/koboService'
 
 function BookIcon() {
@@ -45,18 +45,13 @@ export function AppNavbar() {
             Kobo Note Up
           </span>
         </NavbarItem>
-      </NavbarSection>
-
-      <NavbarSpacer />
-
-      {hasData && (
-        <NavbarSection>
+        {hasData && (
           <NavbarItem href="/books" current={pathname.startsWith('/book')}>
             <BookIcon />
             <span>Library</span>
           </NavbarItem>
-        </NavbarSection>
-      )}
+        )}
+      </NavbarSection>
     </Navbar>
   )
 }

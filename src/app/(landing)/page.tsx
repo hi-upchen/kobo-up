@@ -19,6 +19,7 @@ export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [supportLevel, setSupportLevel] = useState<FolderPickerSupport>('directory-api')
+  const [hasStoredData, setHasStoredData] = useState(false)
 
   useEffect(() => {
     // Detect folder picker support level
@@ -33,6 +34,15 @@ export default function LandingPage() {
         setSupportLevel('file-only')
       }
     }
+
+    // Check if user has previously uploaded data
+    let cancelled = false
+    KoboService.hasStoredData().then(result => {
+      if (!cancelled) setHasStoredData(result)
+    }).catch(() => {
+      if (!cancelled) setHasStoredData(false)
+    })
+    return () => { cancelled = true }
   }, [])
 
   const handleDatabaseSelect = async (file: File) => {
@@ -153,7 +163,21 @@ export default function LandingPage() {
           <Text className="mt-4 text-sm text-gray-600 text-center">
             Trusted by thousands of readers worldwide. 100% private, 100% in your browser.
           </Text>
-          
+
+          {hasStoredData && (
+            <div className="mt-8 flex justify-center">
+              <a
+                href="/books"
+                className="inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 px-5 py-2.5 text-sm font-medium text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-950/80 transition-colors"
+              >
+                Your library is loaded.
+                <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                  View your books &rarr;
+                </span>
+              </a>
+            </div>
+          )}
+
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <button
               onClick={scrollToUpload}
