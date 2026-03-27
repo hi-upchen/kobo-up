@@ -136,9 +136,9 @@ export async function POST(request: NextRequest) {
 
   const imageUploads = bookData.imageUploads ?? {}
   const imageEntries = Object.entries(imageUploads)
-  if (imageEntries.length > 200) {
+  if (imageEntries.length > 500) {
     return NextResponse.json(
-      { error: 'Too many image uploads (max 200)' },
+      { error: 'Too many image uploads (max 500)' },
       { status: 400 }
     )
   }
