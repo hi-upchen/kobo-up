@@ -65,6 +65,19 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ fileUploadId })
   } catch (err) {
+    // Forward Notion 429 rate limit to client with Retry-After header
+    if (err && typeof err === 'object' && 'status' in err && err.status === 429) {
+      const retryAfter = 'headers' in err && err.headers instanceof Headers
+        ? err.headers.get('retry-after')
+        : null
+      return NextResponse.json(
+        { error: 'Rate limited by Notion' },
+        {
+          status: 429,
+          headers: { 'Retry-After': retryAfter || '1' },
+        }
+      )
+    }
     console.error('[Notion upload] Image upload failed:', err instanceof Error ? err.message : err)
     return NextResponse.json(
       { error: 'Image upload failed' },
