@@ -5,9 +5,10 @@ import { getNotionSession } from '@/lib/notion/session'
 import { buildBookPageBlocks } from '@/utils/notionBlockBuilder'
 import { IBookChapter } from '@/types/kobo'
 
-// Allow up to 60s for large books (600+ images can produce 2000+ blocks,
-// requiring many sequential Notion API calls under the 3 req/s rate limit).
-export const maxDuration = 60
+// Allow up to 180s for very large books. Real-world: ~1500 blocks = 40s,
+// so 180s leaves headroom for ~6000+ block books before hitting the limit.
+// (Vercel limits: Hobby 300s, Pro 800s.)
+export const maxDuration = 180
 
 interface ExportBookData {
   bookTitle: string
