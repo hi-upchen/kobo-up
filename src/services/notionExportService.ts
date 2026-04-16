@@ -51,24 +51,49 @@ export async function fetchNotionPages(): Promise<NotionPage[]> {
   return data.pages as NotionPage[]
 }
 
+const UPLOAD_MAX_RETRIES = 3
+const UPLOAD_BASE_DELAY_MS = 1000
+
 /**
  * Upload a single image to Notion via the server-side upload endpoint.
+ * Retries up to 3 times with exponential backoff; respects Retry-After on 429.
  * Returns the Notion fileUploadId or null on failure.
  */
 async function uploadImageToNotion(blob: Blob, filename: string): Promise<string | null> {
-  try {
-    const formData = new FormData()
-    formData.append('file', blob, filename)
-    const res = await fetch('/api/notion/upload-image', {
-      method: 'POST',
-      body: formData,
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.fileUploadId ?? null
-  } catch {
-    return null
+  for (let attempt = 0; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+    try {
+      const formData = new FormData()
+      formData.append('file', blob, filename)
+      const res = await fetch('/api/notion/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.fileUploadId ?? null
+      }
+
+      // Retry on 429 or 5xx; give up on other errors
+      if (res.status !== 429 && res.status < 500) {
+        return null
+      }
+
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        const retryAfter = res.headers.get('Retry-After')
+        const delayMs = retryAfter
+          ? parseFloat(retryAfter) * 1000
+          : UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+        await new Promise((r) => setTimeout(r, delayMs))
+      }
+    } catch {
+      // Network error — retry with backoff
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)))
+      }
+    }
   }
+  return null
 }
 
 /**
