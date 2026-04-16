@@ -5,6 +5,10 @@ import { getNotionSession } from '@/lib/notion/session'
 import { buildBookPageBlocks } from '@/utils/notionBlockBuilder'
 import { IBookChapter } from '@/types/kobo'
 
+// Allow up to 60s for large books (600+ images can produce 2000+ blocks,
+// requiring many sequential Notion API calls under the 3 req/s rate limit).
+export const maxDuration = 60
+
 interface ExportBookData {
   bookTitle: string
   author: string
@@ -65,7 +69,7 @@ async function appendBlocksInBatches(
   isAborted: () => boolean,
   onProgress?: (current: number, total: number) => void
 ): Promise<number> {
-  const BATCH_SIZE = 50
+  const BATCH_SIZE = 100 // Notion API max (per append_block_children endpoint docs)
   let totalCreated = 0
   const totalBlocks = blocks.length
 
