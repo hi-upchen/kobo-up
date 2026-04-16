@@ -37,4 +37,24 @@ describe('concurrentMap', () => {
       })
     ).rejects.toThrow('fail')
   })
+
+  it('should work when concurrency exceeds item count', async () => {
+    const results = await concurrentMap([1], 100, async (n) => n * 10)
+    expect(results).toEqual([10])
+  })
+
+  it('should work with concurrency = 1 (serial)', async () => {
+    const order: number[] = []
+    await concurrentMap([1, 2, 3], 1, async (n) => {
+      order.push(n)
+      return n
+    })
+    expect(order).toEqual([1, 2, 3])
+  })
+
+  it('should throw on invalid concurrency', async () => {
+    await expect(concurrentMap([1], 0, async (n) => n)).rejects.toThrow(RangeError)
+    await expect(concurrentMap([1], -1, async (n) => n)).rejects.toThrow(RangeError)
+    await expect(concurrentMap([1], NaN, async (n) => n)).rejects.toThrow(RangeError)
+  })
 })

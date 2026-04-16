@@ -67,9 +67,11 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Forward Notion 429 rate limit to client with Retry-After header
     if (err && typeof err === 'object' && 'status' in err && err.status === 429) {
-      const retryAfter = 'headers' in err && err.headers instanceof Headers
-        ? err.headers.get('retry-after')
+      // Notion SDK errors expose headers as a plain object, not a Headers instance
+      const headers = 'headers' in err && err.headers && typeof err.headers === 'object'
+        ? err.headers as Record<string, string>
         : null
+      const retryAfter = headers?.['retry-after'] ?? null
       return NextResponse.json(
         { error: 'Rate limited by Notion' },
         {

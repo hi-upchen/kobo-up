@@ -54,6 +54,23 @@ export async function fetchNotionPages(): Promise<NotionPage[]> {
 
 const UPLOAD_MAX_RETRIES = 3
 const UPLOAD_BASE_DELAY_MS = 1000
+const UPLOAD_MAX_DELAY_MS = 30_000
+const UPLOAD_CONCURRENCY = 6
+
+/**
+ * Compute retry delay: use Retry-After header if available, otherwise exponential backoff.
+ * Clamped to UPLOAD_MAX_DELAY_MS to prevent unbounded waits.
+ */
+function computeRetryDelay(attempt: number, retryAfterHeader: string | null): number {
+  let delayMs: number
+  if (retryAfterHeader) {
+    const parsed = parseFloat(retryAfterHeader)
+    delayMs = Number.isFinite(parsed) ? parsed * 1000 : UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+  } else {
+    delayMs = UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+  }
+  return Math.min(delayMs, UPLOAD_MAX_DELAY_MS)
+}
 
 /**
  * Upload a single image to Notion via the server-side upload endpoint.
@@ -81,16 +98,14 @@ async function uploadImageToNotion(blob: Blob, filename: string): Promise<string
       }
 
       if (attempt < UPLOAD_MAX_RETRIES) {
-        const retryAfter = res.headers.get('Retry-After')
-        const delayMs = retryAfter
-          ? parseFloat(retryAfter) * 1000
-          : UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+        const delayMs = computeRetryDelay(attempt, res.headers.get('Retry-After'))
         await new Promise((r) => setTimeout(r, delayMs))
       }
     } catch {
       // Network error — retry with backoff
       if (attempt < UPLOAD_MAX_RETRIES) {
-        await new Promise((r) => setTimeout(r, UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)))
+        const delayMs = computeRetryDelay(attempt, null)
+        await new Promise((r) => setTimeout(r, delayMs))
       }
     }
   }
@@ -145,10 +160,9 @@ export async function exportBookToNotion(
   const totalUploads = compositedEntries.length
   let uploadedCount = 0
 
-  const CONCURRENCY = 6
   const uploadResults = await concurrentMap(
     compositedEntries,
-    CONCURRENCY,
+    UPLOAD_CONCURRENCY,
     async ([bookmarkId, blob]) => {
       const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
       uploadedCount++

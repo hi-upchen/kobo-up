@@ -1,14 +1,9 @@
 /**
- * Utility for mapping over an array with bounded concurrency (sliding window).
- * As each task completes, the next item starts immediately — no idle slots.
- */
-
-/**
  * Execute an async function over an array with bounded concurrency (sliding window).
  * Starts up to `concurrency` tasks at once; as each completes, the next item starts immediately.
  * Returns results in the same order as the input array.
  * @param items - Array of items to process
- * @param concurrency - Maximum number of concurrent in-flight promises
+ * @param concurrency - Maximum number of concurrent in-flight promises (must be >= 1)
  * @param fn - Async function to apply to each item
  */
 export async function concurrentMap<T, R>(
@@ -16,6 +11,10 @@ export async function concurrentMap<T, R>(
   concurrency: number,
   fn: (item: T, index: number) => Promise<R>
 ): Promise<R[]> {
+  if (!Number.isFinite(concurrency) || concurrency < 1) {
+    throw new RangeError(`concurrency must be >= 1, got ${concurrency}`)
+  }
+
   const results: R[] = new Array(items.length)
   let nextIndex = 0
 
