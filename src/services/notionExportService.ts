@@ -207,6 +207,8 @@ export async function exportBookToNotion(
 
   const decoder = new TextDecoder()
   let buffer = ''
+  let doneEventReceived = false
+  let receivedAnyEvents = false
   let result: NotionExportResult = { success: false, error: 'No response from server' }
 
   while (true) {
@@ -221,7 +223,9 @@ export async function exportBookToNotion(
       if (!line.startsWith('data: ')) continue
       try {
         const data = JSON.parse(line.slice(6))
+        receivedAnyEvents = true
         if (data.stage === 'done') {
+          doneEventReceived = true
           result = data.success
             ? { success: true, pageUrl: data.pageUrl }
             : { success: false, error: data.error }
@@ -231,6 +235,21 @@ export async function exportBookToNotion(
       } catch {
         // skip malformed lines
       }
+    }
+  }
+
+  // If the stream closed without a final 'done' event, the server was interrupted
+  // (most likely a Vercel function timeout). Report a helpful error.
+  if (!doneEventReceived) {
+    if (receivedAnyEvents) {
+      return {
+        success: false,
+        error: 'Export was interrupted before completion (likely a server timeout due to book size). A partial page may have been created in Notion — please check your workspace.',
+      }
+    }
+    return {
+      success: false,
+      error: 'No response from server. Please try again.',
     }
   }
 
