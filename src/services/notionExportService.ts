@@ -165,8 +165,8 @@ export async function exportBookToNotion(
     UPLOAD_CONCURRENCY,
     async ([bookmarkId, blob]) => {
       const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
-      uploadedCount++
-      onProgress?.('Uploading images', uploadedCount, totalUploads)
+      const current = ++uploadedCount
+      onProgress?.('Uploading images', current, totalUploads)
       return { bookmarkId, fileUploadId }
     }
   )
