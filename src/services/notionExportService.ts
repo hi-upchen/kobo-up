@@ -1,6 +1,7 @@
 import type { IBook, IBookChapter } from '@/types/kobo'
 import { getMarkupFilesByIds } from '@/services/markupService'
 import { compositeMarkupImage } from '@/utils/imageCompositor'
+import { concurrentMap } from '@/utils/concurrentMap'
 
 export interface NotionConnectionStatus {
   connected: boolean
@@ -138,26 +139,25 @@ export async function exportBookToNotion(
     }
   }
 
-  // 4. Upload images to Notion with bounded concurrency
+  // 4. Upload images to Notion with sliding window concurrency
   const imageUploads: Record<string, string> = {}
   const compositedEntries = Array.from(composited.entries())
   const totalUploads = compositedEntries.length
   let uploadedCount = 0
 
-  const CONCURRENCY = 3
-  for (let i = 0; i < totalUploads; i += CONCURRENCY) {
-    const batch = compositedEntries.slice(i, i + CONCURRENCY)
-    const results = await Promise.all(
-      batch.map(async ([bookmarkId, blob]) => {
-        const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
-        return { bookmarkId, fileUploadId }
-      })
-    )
-    for (const { bookmarkId, fileUploadId } of results) {
-      if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
+  const CONCURRENCY = 6
+  const uploadResults = await concurrentMap(
+    compositedEntries,
+    CONCURRENCY,
+    async ([bookmarkId, blob]) => {
+      const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
+      uploadedCount++
+      onProgress?.('Uploading images', uploadedCount, totalUploads)
+      return { bookmarkId, fileUploadId }
     }
-    uploadedCount += batch.length
-    onProgress?.('Uploading images', uploadedCount, totalUploads)
+  )
+  for (const { bookmarkId, fileUploadId } of uploadResults) {
+    if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
   }
 
   // 5. Send JSON bookData with imageUploads map to export API
