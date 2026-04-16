@@ -123,7 +123,7 @@ export class ErrorService {
         return 'Unable to access the database. Please try uploading your file again.'
       
       case ErrorType.FILE_ERROR:
-        return 'The selected file is not a valid Kobo database. Please select a .sqlite file from your Kobo device.'
+        return error.message || 'The selected file is not a valid Kobo database. Please select a .sqlite file from your Kobo device.'
       
       case ErrorType.VALIDATION_ERROR:
         return 'The provided data is invalid. Please check your input and try again.'

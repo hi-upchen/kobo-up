@@ -1,7 +1,7 @@
 export const APP_CONSTANTS = {
   SPONSOR_DISPLAY_THRESHOLD: 10,
   REDIRECT_DELAY_MS: 3000,
-  MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+  MAX_FILE_SIZE: 500 * 1024 * 1024, // 500MB
   SUPPORTED_DB_EXTENSIONS: ['.sqlite', '.db'] as const,
   STORAGE_KEYS: {
     KOBO_DB: 'kobo-database',

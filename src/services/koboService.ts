@@ -48,31 +48,46 @@ export class KoboService {
    * Initialize database from uploaded file
    */
   static async initializeDatabase(file: File): Promise<void> {
-    try {
-      if (!this.isValidKoboDatabase(file)) {
-        throw ErrorService.handleFileError('Invalid Kobo database file')
-      }
+    const extension = this.getFileExtension(file.name)
+    const hasValidExtension = APP_CONSTANTS.SUPPORTED_DB_EXTENSIONS.includes(extension as '.sqlite' | '.db')
+    if (!hasValidExtension) {
+      throw ErrorService.handleFileError(
+        `Unsupported file type "${extension || '(none)'}". Please upload a .sqlite or .db file from your Kobo device.`
+      )
+    }
 
+    if (!this.validateFileSize(file)) {
+      const sizeMB = Math.round(file.size / (1024 * 1024))
+      const limitMB = Math.round(APP_CONSTANTS.MAX_FILE_SIZE / (1024 * 1024))
+      throw ErrorService.handleFileError(
+        `File size (${sizeMB}MB) exceeds the ${limitMB}MB limit.`
+      )
+    }
+
+    try {
       // Initialize database connection using existing KoboDB functions
       const db = await connKoboDB(file)
 
       // Validate it's actually a Kobo database
       const isKoboDb = await checkIsKoboDB(db)
       if (!isKoboDb) {
-        throw ErrorService.handleDatabaseError(
-          new Error('File does not contain Kobo database structure'),
-          'validation'
+        throw ErrorService.handleFileError(
+          'This file does not contain a valid Kobo database structure. Please upload the KoboReader.sqlite file from your Kobo device.'
         )
       }
 
       this.database = db
-      
+
       // Store database data using the original IndexedDB approach
       // Convert File to ArrayBuffer and store in IndexedDB
       const arrayBuffer = await file.arrayBuffer()
       await this.saveToIndexedDB(arrayBuffer)
 
     } catch (error) {
+      // Re-throw KoboErrors as-is to preserve specific messages
+      if (ErrorService.isKoboError(error as Error)) {
+        throw error
+      }
       throw ErrorService.handleDatabaseError(error as Error, 'initialization')
     }
   }

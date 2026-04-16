@@ -135,9 +135,7 @@ describe('ErrorService', () => {
       )
 
       const fileError = new KoboError('Invalid file', ErrorType.FILE_ERROR)
-      expect(ErrorService.getErrorMessage(fileError)).toBe(
-        'The selected file is not a valid Kobo database. Please select a .sqlite file from your Kobo device.'
-      )
+      expect(ErrorService.getErrorMessage(fileError)).toBe('Invalid file')
     })
 
     it('should return original message for regular errors', () => {
