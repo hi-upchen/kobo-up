@@ -136,12 +136,6 @@ export async function POST(request: NextRequest) {
 
   const imageUploads = bookData.imageUploads ?? {}
   const imageEntries = Object.entries(imageUploads)
-  if (imageEntries.length > 500) {
-    return NextResponse.json(
-      { error: 'Too many image uploads (max 500)' },
-      { status: 400 }
-    )
-  }
   for (const [, id] of imageEntries) {
     if (!UUID_RE.test(id)) {
       return NextResponse.json(
