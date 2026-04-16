@@ -1,6 +1,7 @@
 import type { IBook, IBookChapter } from '@/types/kobo'
 import { getMarkupFilesByIds } from '@/services/markupService'
 import { compositeMarkupImage } from '@/utils/imageCompositor'
+import { concurrentMap } from '@/utils/concurrentMap'
 
 export interface NotionConnectionStatus {
   connected: boolean
@@ -51,24 +52,64 @@ export async function fetchNotionPages(): Promise<NotionPage[]> {
   return data.pages as NotionPage[]
 }
 
+const UPLOAD_MAX_RETRIES = 3
+const UPLOAD_BASE_DELAY_MS = 1000
+const UPLOAD_MAX_DELAY_MS = 30_000
+const UPLOAD_CONCURRENCY = 6
+
+/**
+ * Compute retry delay: use Retry-After header if available, otherwise exponential backoff.
+ * Clamped to UPLOAD_MAX_DELAY_MS to prevent unbounded waits.
+ */
+function computeRetryDelay(attempt: number, retryAfterHeader: string | null): number {
+  let delayMs: number
+  if (retryAfterHeader) {
+    const parsed = parseFloat(retryAfterHeader)
+    delayMs = Number.isFinite(parsed) ? parsed * 1000 : UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+  } else {
+    delayMs = UPLOAD_BASE_DELAY_MS * Math.pow(2, attempt)
+  }
+  return Math.min(delayMs, UPLOAD_MAX_DELAY_MS)
+}
+
 /**
  * Upload a single image to Notion via the server-side upload endpoint.
+ * Retries up to 3 times with exponential backoff; respects Retry-After on 429.
  * Returns the Notion fileUploadId or null on failure.
  */
 async function uploadImageToNotion(blob: Blob, filename: string): Promise<string | null> {
-  try {
-    const formData = new FormData()
-    formData.append('file', blob, filename)
-    const res = await fetch('/api/notion/upload-image', {
-      method: 'POST',
-      body: formData,
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.fileUploadId ?? null
-  } catch {
-    return null
+  for (let attempt = 0; attempt <= UPLOAD_MAX_RETRIES; attempt++) {
+    try {
+      const formData = new FormData()
+      formData.append('file', blob, filename)
+      const res = await fetch('/api/notion/upload-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        return data.fileUploadId ?? null
+      }
+
+      // Retry on 429 or 5xx; give up on other errors
+      if (res.status !== 429 && res.status < 500) {
+        return null
+      }
+
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        const delayMs = computeRetryDelay(attempt, res.headers.get('Retry-After'))
+        await new Promise((r) => setTimeout(r, delayMs))
+      }
+    } catch {
+      // Network error — retry with backoff
+      if (attempt < UPLOAD_MAX_RETRIES) {
+        const delayMs = computeRetryDelay(attempt, null)
+        await new Promise((r) => setTimeout(r, delayMs))
+      }
+    }
   }
+  return null
 }
 
 /**
@@ -113,26 +154,24 @@ export async function exportBookToNotion(
     }
   }
 
-  // 4. Upload images to Notion with bounded concurrency
+  // 4. Upload images to Notion with sliding window concurrency
   const imageUploads: Record<string, string> = {}
   const compositedEntries = Array.from(composited.entries())
   const totalUploads = compositedEntries.length
   let uploadedCount = 0
 
-  const CONCURRENCY = 3
-  for (let i = 0; i < totalUploads; i += CONCURRENCY) {
-    const batch = compositedEntries.slice(i, i + CONCURRENCY)
-    const results = await Promise.all(
-      batch.map(async ([bookmarkId, blob]) => {
-        const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
-        return { bookmarkId, fileUploadId }
-      })
-    )
-    for (const { bookmarkId, fileUploadId } of results) {
-      if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
+  const uploadResults = await concurrentMap(
+    compositedEntries,
+    UPLOAD_CONCURRENCY,
+    async ([bookmarkId, blob]) => {
+      const fileUploadId = await uploadImageToNotion(blob, `${bookmarkId}.jpg`)
+      const current = ++uploadedCount
+      onProgress?.('Uploading images', current, totalUploads)
+      return { bookmarkId, fileUploadId }
     }
-    uploadedCount += batch.length
-    onProgress?.('Uploading images', uploadedCount, totalUploads)
+  )
+  for (const { bookmarkId, fileUploadId } of uploadResults) {
+    if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
   }
 
   // 5. Send JSON bookData with imageUploads map to export API
