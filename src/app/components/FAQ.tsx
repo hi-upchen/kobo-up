@@ -22,7 +22,7 @@ const faqs = [
   {
     question: "Is my Kobo data safe when using this tool?",
     answer:
-      "Yes, completely safe. All processing happens locally in your browser - your notes and highlights never leave your computer. No data is uploaded to external servers, ensuring complete privacy and security of your reading annotations.",
+      "Yes. By default, all processing happens locally in your browser — your notes and highlights are never uploaded to any server. The only exceptions are two features you have to opt into yourself: sharing your database for debugging, and exporting to Notion. See our privacy page (kobo-up.runawayup.com/privacy) for exactly what those transmit.",
   },
   {
     question: "Which browsers support Kobo export functionality?",
