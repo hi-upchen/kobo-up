@@ -52,4 +52,10 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Google Search Console ownership verification. The token was issued via the
+  // Site Verification API for this site; removing it revokes verified access
+  // to search performance data.
+  verification: {
+    google: 'hlfoIIZK-7THAZp9tm5HHeHhgxdUN2uwDIjqag3O7mY',
+  },
 }
