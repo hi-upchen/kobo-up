@@ -1,6 +1,6 @@
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/react'
 import { MinusSmallIcon, PlusSmallIcon } from '@heroicons/react/24/outline'
-import { Text } from '@/components/text'
+import { Text, TextLink } from '@/components/text'
 import { Heading } from '@/components/heading'
 
 const faqs = [
@@ -66,6 +66,13 @@ export default function FAQSection() {
               </Disclosure>
             ))}
           </dl>
+          <Text className="mt-8 text-center">
+            Still stuck after trying the steps above? Read the full{' '}
+            <TextLink href="/guides/kobo-export-not-working">
+              Kobo export troubleshooting guide
+            </TextLink>{' '}
+            for every workaround compared, including Calibre and manual SQLite options.
+          </Text>
         </div>
       </div>
   )

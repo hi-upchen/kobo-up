@@ -1,9 +1,15 @@
 /**
- * Verifies sitemap.ts lists exactly the indexable pages (the homepage and
- * the static privacy page — book/notes pages render from client-side state
- * and are not crawlable).
+ * Verifies sitemap.ts lists exactly the indexable pages (the homepage, the
+ * static privacy page, and the three statically rendered SEO guide pages —
+ * book/notes pages render from client-side state and are not crawlable).
  */
 import sitemap from '../sitemap';
+
+const GUIDE_URLS = [
+  'https://kobo-up.runawayup.com/guides/kobo-export-not-working',
+  'https://kobo-up.runawayup.com/guides/export-kobo-highlights-to-notion',
+  'https://kobo-up.runawayup.com/guides/export-kobo-highlights-to-markdown-obsidian',
+];
 
 describe('sitemap', () => {
   it('lists the homepage with weekly change frequency', () => {
@@ -19,8 +25,17 @@ describe('sitemap', () => {
     expect(privacyEntry?.changeFrequency).toBe('monthly');
   });
 
-  it('lists exactly two pages', () => {
+  it('lists all three guide pages with monthly change frequency', () => {
     const result = sitemap();
-    expect(result).toHaveLength(2);
+    for (const url of GUIDE_URLS) {
+      const entry = result.find((item) => item.url === url);
+      expect(entry).toBeDefined();
+      expect(entry?.changeFrequency).toBe('monthly');
+    }
+  });
+
+  it('lists exactly five pages', () => {
+    const result = sitemap();
+    expect(result).toHaveLength(5);
   });
 });
