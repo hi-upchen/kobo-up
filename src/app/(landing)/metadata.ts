@@ -34,20 +34,11 @@ export const metadata: Metadata = {
     siteName: 'Kobo Note Up',
     locale: 'en_US',
     type: 'website',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Kobo Note Up - Export Kobo Highlights & Notes',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Kobo Export Not Working? Fixed - Kobo Note Up',
     description: 'Fix broken Kobo export instantly. Works with sideloaded books when official export fails. Browser-based, private.',
-    images: ['/og-image.jpg'],
     creator: '@kobonoteup',
   },
   robots: {
@@ -60,8 +51,5 @@ export const metadata: Metadata = {
       'max-image-preview': 'large',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'your-google-verification-code',
   },
 }
