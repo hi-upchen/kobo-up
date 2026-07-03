@@ -230,4 +230,57 @@ describe('KoboService', () => {
       globalThis.indexedDB = originalIndexedDB
     })
   })
+
+  describe('getBookCount', () => {
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it('should return null when database is not initialized', async () => {
+      ;(KoboService as { database: unknown }).database = null
+      expect(await KoboService.getBookCount()).toBeNull()
+    })
+
+    it('should return the number of books from a single getBookList query', async () => {
+      ;(KoboService as { database: unknown }).database = {}
+      ;(KoboDB.getBookList as jest.Mock).mockResolvedValue([{ contentId: '1' }, { contentId: '2' }, { contentId: '3' }])
+
+      expect(await KoboService.getBookCount()).toBe(3)
+      expect(KoboDB.getBookList).toHaveBeenCalledTimes(1)
+    })
+
+    it('should return null when the query fails, without throwing', async () => {
+      ;(KoboService as { database: unknown }).database = {}
+      ;(KoboDB.getBookList as jest.Mock).mockRejectedValue(new Error('query failed'))
+
+      await expect(KoboService.getBookCount()).resolves.toBeNull()
+    })
+  })
+
+  describe('consumeLoadedTransition', () => {
+    beforeEach(() => {
+      // Reset the private one-shot gate directly, since it has no public
+      // setter other than clearStoredData (exercised in its own test below).
+      ;(KoboService as unknown as { hasFiredLoadedEvent: boolean }).hasFiredLoadedEvent = false
+      // A prior describe block in this file may have left `database` set to
+      // a plain object with no `.close()` method; clear it so
+      // `clearStoredData`'s internal `closeDatabase()` call doesn't throw.
+      ;(KoboService as { database: unknown }).database = null
+    })
+
+    it('should return true on the first call and false on every call after', () => {
+      expect(KoboService.consumeLoadedTransition()).toBe(true)
+      expect(KoboService.consumeLoadedTransition()).toBe(false)
+      expect(KoboService.consumeLoadedTransition()).toBe(false)
+    })
+
+    it('should return true again after clearStoredData resets the gate', async () => {
+      expect(KoboService.consumeLoadedTransition()).toBe(true)
+      expect(KoboService.consumeLoadedTransition()).toBe(false)
+
+      await KoboService.clearStoredData()
+
+      expect(KoboService.consumeLoadedTransition()).toBe(true)
+    })
+  })
 })
