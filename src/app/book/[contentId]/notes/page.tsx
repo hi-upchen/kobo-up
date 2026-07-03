@@ -65,6 +65,20 @@ function NotesPageContent() {
           if (hasStoredData) {
             console.log('Auto-initializing database from stored data...')
             await KoboService.initializeFromStoredData()
+
+            // Covers the returning user who bookmarked/opened a book's
+            // notes URL directly, skipping /books entirely — the only
+            // other stored-data activation site is books/page.tsx, and
+            // `consumeLoadedTransition` ensures whichever one runs first
+            // this session is the one that reports the event.
+            if (KoboService.consumeLoadedTransition()) {
+              const bookCount = await KoboService.getBookCount()
+              pushToDataLayer({
+                event: 'kobodb_loaded',
+                method: 'stored',
+                ...(bookCount !== null ? { book_count: bookCount } : {})
+              })
+            }
           } else {
             // No data found, redirect to landing page
             console.error('No database found')

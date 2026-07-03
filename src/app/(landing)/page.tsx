@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { KoboService } from '@/services/koboService'
 import { NavigationService } from '@/services/navigationService'
 import { ErrorService } from '@/services/errorService'
+import { pushToDataLayer } from '@/utils/gtm'
 import { DatabaseSelector } from './components/DatabaseSelector'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
@@ -45,13 +46,37 @@ export default function LandingPage() {
     return () => { cancelled = true }
   }, [])
 
-  const handleDatabaseSelect = async (file: File) => {
+  /**
+   * Validates and parses a selected Kobo database file, then navigates to
+   * the books page on success. Fires the `kobodb_loaded` activation event
+   * exactly once per session (guarded by `KoboService.consumeLoadedTransition`)
+   * right after the database is confirmed usable — not on file selection,
+   * and not on failure — so GA4 can measure the visit-to-activation step of
+   * the funnel.
+   *
+   * @param file - The selected `KoboReader.sqlite`/`Kobo.sqlite` file.
+   * @param method - Which selection UI produced this file: `folder_picker`
+   *   for both the File System Access API and `webkitdirectory` folder
+   *   pickers (indistinguishable to the user, so collapsed into one
+   *   analytics value), or `file_upload` for the direct single-file input
+   *   fallback used by browsers without folder-picker support.
+   */
+  const handleDatabaseSelect = async (file: File, method: 'folder_picker' | 'file_upload' = 'file_upload') => {
     setIsLoading(true)
     setError(null)
 
     try {
       // Validate and initialize database using our clean service
       await KoboService.initializeDatabase(file)
+
+      if (KoboService.consumeLoadedTransition()) {
+        const bookCount = await KoboService.getBookCount()
+        pushToDataLayer({
+          event: 'kobodb_loaded',
+          method,
+          ...(bookCount !== null ? { book_count: bookCount } : {})
+        })
+      }
 
       // Navigate to books page on success
       NavigationService.navigateToBooks(router)
@@ -66,6 +91,15 @@ export default function LandingPage() {
     }
   }
 
+  /**
+   * Stores any handwriting markup files found alongside the database, then
+   * hands the database file to `handleDatabaseSelect` tagged as
+   * `folder_picker` — this is the shared tail end of both folder-selection
+   * flows (File System Access API and `webkitdirectory`).
+   *
+   * @param sqliteFile - The located `KoboReader.sqlite`/`Kobo.sqlite` file.
+   * @param markupFiles - Paired SVG/JPG handwriting annotation files found in the folder, if any.
+   */
   const processKoboFiles = async (
     sqliteFile: File,
     markupFiles: { bookmarkId: string; svg: ArrayBuffer; jpg: ArrayBuffer }[]
@@ -75,7 +109,7 @@ export default function LandingPage() {
     if (markupFiles.length > 0) {
       await saveMarkupFiles(markupFiles)
     }
-    await handleDatabaseSelect(sqliteFile)
+    await handleDatabaseSelect(sqliteFile, 'folder_picker')
   }
 
   const handleDirectorySelect = async () => {

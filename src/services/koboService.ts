@@ -15,6 +15,14 @@ export class KoboService {
   private static database: Database | null = null
 
   /**
+   * One-shot gate backing the `kobodb_loaded` analytics event: tracks
+   * whether a database load has already been reported this session. Reset
+   * by `clearStoredData()` so re-uploading after "Clear Saved Kobo DB"
+   * counts as a fresh transition.
+   */
+  private static hasFiredLoadedEvent = false
+
+  /**
    * Check if the provided file is a valid Kobo database file
    */
   static isValidKoboDatabase(file: File): boolean {
@@ -405,7 +413,11 @@ export class KoboService {
     try {
       // Close database if open
       this.closeDatabase()
-      
+
+      // Reset the kobodb_loaded gate so a subsequent upload is tracked as a
+      // new session transition instead of being silently skipped.
+      this.hasFiredLoadedEvent = false
+
       // Clear IndexedDB
       if (typeof indexedDB !== 'undefined') {
         await indexedDB.deleteDatabase('KoboDB')
@@ -439,6 +451,49 @@ export class KoboService {
    */
   static isDatabaseInitialized(): boolean {
     return this.database !== null
+  }
+
+  /**
+   * Returns the number of books in the currently initialized database, for
+   * cheap inclusion in analytics events. Runs the same single-query
+   * `getBookList` lookup the books page already performs — unlike
+   * `loadBooksWithNotes`, it does not loop through each book to fetch its
+   * highlights/notes, so it stays inexpensive enough to call from an event
+   * handler without adding a real extra cost.
+   *
+   * @returns Book count, or null if the database is not initialized or the query fails.
+   */
+  static async getBookCount(): Promise<number | null> {
+    if (!this.database) return null
+    try {
+      const books = await getBookList(this.database)
+      return books.length
+    } catch (error) {
+      ErrorService.logError(error as Error)
+      return null
+    }
+  }
+
+  /**
+   * Reports whether this call is the first successful database load in the
+   * current browser session — the "no usable DB" to "usable DB" transition
+   * that the `kobodb_loaded` analytics event is meant to capture — and
+   * marks that transition as consumed.
+   *
+   * Both the landing page's fresh-selection flow and the returning-user
+   * "load from storage" flow on `/books` and `/book/:id/notes` call this
+   * before firing the event, so it fires exactly once per session even
+   * though those pages independently re-touch the database on every mount.
+   * The gate resets in `clearStoredData()`, so re-uploading a database after
+   * clearing counts as a new transition.
+   *
+   * @returns True on the first call this session; false on every subsequent
+   *   call until `clearStoredData()` runs.
+   */
+  static consumeLoadedTransition(): boolean {
+    if (this.hasFiredLoadedEvent) return false
+    this.hasFiredLoadedEvent = true
+    return true
   }
 
   /**

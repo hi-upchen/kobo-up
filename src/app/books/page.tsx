@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { KoboService } from '@/services/koboService'
 import { NavigationService } from '@/services/navigationService'
 import { ErrorService } from '@/services/errorService'
+import { pushToDataLayer } from '@/utils/gtm'
 import type { IBook } from '@/types/kobo'
 import { BooksHeader } from './components/BooksHeader'
 import { BooksList } from './components/BooksList'
@@ -37,11 +38,21 @@ export default function BooksPage() {
 
         // Initialize database from stored IndexedDB data
         await KoboService.initializeFromStoredData()
-        
+
         // Load books
         const loadedBooks = await KoboService.loadBooksWithNotes()
-        
+
         setBooks(loadedBooks)
+
+        // Report the returning-user "load from storage" activation path.
+        // This mount re-runs on every visit to /books (including right
+        // after a fresh upload navigates here), but
+        // `consumeLoadedTransition` only returns true once per session, so
+        // a fresh-load firing on the landing page takes precedence and this
+        // does not double-count it.
+        if (KoboService.consumeLoadedTransition()) {
+          pushToDataLayer({ event: 'kobodb_loaded', method: 'stored', book_count: loadedBooks.length })
+        }
 
       } catch (error) {
         const errorMessage = ErrorService.getErrorMessage(error as Error)
