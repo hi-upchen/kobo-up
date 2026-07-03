@@ -130,7 +130,7 @@ export function BooksList({
             />
             {donationShouldBeShownAfterBookIndex === index && (
               <div className="px-2 md:px-4">
-                <DonationCard />
+                <DonationCard placement="donation_card_books" />
               </div>
             )}
           </React.Fragment>
