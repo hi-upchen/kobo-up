@@ -1,12 +1,18 @@
 "use client";
 
-// components/Footer.tsx
+/**
+ * Site-wide footer: social/contact links, the privacy page link, and the
+ * two data-affecting actions users can trigger from here — sharing the
+ * local Kobo database for debugging (uploads to Vercel Blob, see
+ * /api/kobodb/upload) and clearing the locally stored database.
+ */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { KoboService } from '@/services/koboService';
 import { NavigationService } from '@/services/navigationService';
 import { pushToDataLayer } from '@/utils/gtm';
 import { upload } from '@vercel/blob/client';
+import NextLink from 'next/link';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text'
 import { Dialog, DialogActions, DialogBody, DialogDescription, DialogTitle } from '@/components/dialog';
@@ -82,7 +88,13 @@ const Footer = () => {
       <footer className="footer flex justify-center items-center pt-4 px-2 py-2 border-t text-zinc-400 dark:text-zinc-500 text-sm border-zinc-900/10 dark:border-zinc-100/10 mt-6 sm:mt-12 lg:mt-24">
         <p className="mr-4 ml-auto hover:scale-105 transition">© 出走工程師 Up</p>
 
-
+        <NextLink
+          href="/privacy"
+          title="Privacy"
+          className="mr-4 hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
+        >
+          Privacy
+        </NextLink>
 
         <a href="mailto:hi.upchen@gmail.com" title="Send Email to Up Chen" className="mr-2 hover:text-zinc-950 dark:hover:text-zinc-50 transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6">
@@ -172,7 +184,10 @@ const Footer = () => {
         <DialogTitle>Share KoboDB</DialogTitle>
         <DialogDescription>
           Would you like to share your KoboDB with the developer to help improve the app?
-          This will upload your database file for debugging purposes only.
+          Your database file — which contains your reading data — will be uploaded to our
+          file storage (Vercel Blob), and the developer will get a notification email with
+          a link to it. You can request deletion any time by emailing hi.upchen@gmail.com.
+          See our <NextLink href="/privacy" className="underline">privacy page</NextLink> for details.
         </DialogDescription>
         <DialogActions>
           <Button plain onClick={() => setIsConfirmOpen(false)}>

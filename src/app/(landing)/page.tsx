@@ -9,7 +9,7 @@ import { DatabaseSelector } from './components/DatabaseSelector'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
-import { Text } from '@/components/text'
+import { Text, TextLink } from '@/components/text'
 import FAQ from '@/app/components/FAQ'
 
 type FolderPickerSupport = 'directory-api' | 'webkitdirectory' | 'file-only'
@@ -161,7 +161,7 @@ export default function LandingPage() {
           </Text>
           
           <Text className="mt-4 text-sm text-gray-600 text-center">
-            Trusted by thousands of readers worldwide. 100% private, 100% in your browser.
+            Free &amp; open source. Your highlights are processed 100% in your browser.
           </Text>
 
           {hasStoredData && (
@@ -365,9 +365,11 @@ export default function LandingPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-600">
                 🔒
               </div>
-              <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Your Data Never Leaves Your Device</h3>
+              <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Your Data Stays On Your Device By Default</h3>
               <Text className="mt-2 text-sm leading-6">
-                Everything happens locally in your browser using WebAssembly technology. We never see, store, or transmit your data. Your privacy is absolute.
+                Reading and exporting run locally in your browser using WebAssembly technology — your books and highlights are never uploaded during normal use.
+                Two optional, opt-in features do transmit data; see our{' '}
+                <TextLink href="/privacy">privacy page</TextLink> for exactly what and why.
               </Text>
             </div>
 
@@ -399,10 +401,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <Heading className="">
-              Your Privacy Is Sacred. We Mean It.
+              Your Privacy, Plainly Explained
             </Heading>
             <Text className="mt-6 text-lg leading-8">
-              Unlike other tools, Kobo Note Up processes everything directly in your browser. Your database never uploads to our servers because we don't have servers for your data.
+              By default, Kobo Note Up processes everything directly in your browser and your database is never uploaded to our servers. The only exceptions are two features you have to opt into yourself — read the full, honest breakdown on our <TextLink href="/privacy">privacy page</TextLink>.
             </Text>
           </div>
 
@@ -422,9 +424,9 @@ export default function LandingPage() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-green-100">
                   ✅
                 </div>
-                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Zero Data Collection</h3>
+                <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">No Data Collection By Default</h3>
                 <Text className="mt-2 text-sm leading-6">
-                  We can't see your books, notes, or reading habits
+                  We can&apos;t see your books, notes, or reading habits unless you opt into debug sharing or Notion export
                 </Text>
               </div>
 
@@ -441,7 +443,7 @@ export default function LandingPage() {
 
             <div className="mt-12 text-center">
               <Text className="text-sm text-gray-600">
-                When we say "what happens in your browser, stays in your browser," we're not just making promises—it's technically impossible for us to access your data.
+                By default, what happens in your browser stays in your browser — we don&apos;t have a server-side database for your reading data. The two opt-in exceptions (debug sharing and Notion export) are fully disclosed on our <TextLink href="/privacy">privacy page</TextLink>.
               </Text>
             </div>
           </div>
