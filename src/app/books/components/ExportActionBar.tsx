@@ -42,16 +42,17 @@ export function ExportActionBar({
 
   /**
    * Runs the confirmed multi-book export (all books or the current
-   * selection) as either a ZIP of per-book Markdown files or one combined
-   * Markdown file. On success, records an `export_complete` funnel event
-   * with the resulting structure and scope so the export-to-donation
-   * conversion rate can be measured downstream in GA4; failures (caught
-   * below) are not counted as completions.
+   * selection) as either a ZIP of per-book files or one combined file, in
+   * the chosen format (Markdown or plain text). On success, records an
+   * `export_complete` funnel event with the resulting format, structure,
+   * and scope so the export-to-donation conversion rate can be measured
+   * downstream in GA4; failures (caught below) are not counted as
+   * completions.
    *
-   * @param _format - Requested export format from the options modal (currently unused — both structures produce Markdown).
+   * @param format - Requested export format from the options modal (`'markdown'` or `'txt'`).
    * @param structure - Whether to export as a `'zip'` of separate files or a single `'combined'` file.
    */
-  const handleExportConfirm = async (_format: ExportFormat, structure: ExportStructure) => {
+  const handleExportConfirm = async (format: ExportFormat, structure: ExportStructure) => {
     const booksToExport = exportMode === 'all'
       ? booksWithContent
       : books.filter(book => selectedBooks.has(book.contentId))
@@ -59,16 +60,16 @@ export function ExportActionBar({
     try {
       if (structure === 'zip') {
         // Export as ZIP archive with separate files
-        await ExportService.exportBooksAsZip(booksToExport)
+        await ExportService.exportBooksAsZip(booksToExport, format)
       } else {
         // Export as single combined file
-        await ExportService.exportBooksAsCombinedFile(booksToExport, exportMode)
+        await ExportService.exportBooksAsCombinedFile(booksToExport, exportMode, format)
       }
       // Fire once the download has actually been generated, so failed
       // exports (caught below) are not counted as completions.
       pushToDataLayer({
         event: 'export_complete',
-        format: 'markdown',
+        format,
         structure,
         scope: exportMode === 'all' ? 'all_books' : 'selected_books',
       })

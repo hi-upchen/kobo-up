@@ -11,6 +11,7 @@ interface NotesSectionProps {
   book: IBook | null
   sponsorShouldBeShownOnChapterIdx: number | null
   onExportMarkdown: (book: IBook, chapters: IBookChapter[]) => void
+  onExportText: (book: IBook, chapters: IBookChapter[]) => void
   onExportNotion: (book: IBook, chapters: IBookChapter[]) => void
   onDisconnectNotion?: () => void
 }
@@ -21,6 +22,7 @@ export function NotesSection({
   book,
   sponsorShouldBeShownOnChapterIdx,
   onExportMarkdown,
+  onExportText,
   onExportNotion,
   onDisconnectNotion
 }: NotesSectionProps) {
@@ -40,6 +42,7 @@ export function NotesSection({
           book={book}
           bookChapters={bookChapters}
           onExportMarkdown={onExportMarkdown}
+          onExportText={onExportText}
           onExportNotion={onExportNotion}
           onDisconnectNotion={onDisconnectNotion}
         />

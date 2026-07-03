@@ -9,11 +9,12 @@ interface NotesExportDropdownProps {
   book: IBook | null
   bookChapters: IBookChapter[] | null
   onExportMarkdown: (book: IBook, chapters: IBookChapter[]) => void
+  onExportText: (book: IBook, chapters: IBookChapter[]) => void
   onExportNotion: (book: IBook, chapters: IBookChapter[]) => void
   onDisconnectNotion?: () => void
 }
 
-export function NotesExportDropdown({ book, bookChapters, onExportMarkdown, onExportNotion, onDisconnectNotion }: NotesExportDropdownProps) {
+export function NotesExportDropdown({ book, bookChapters, onExportMarkdown, onExportText, onExportNotion, onDisconnectNotion }: NotesExportDropdownProps) {
   const [isNotionConnected, setIsNotionConnected] = useState(false)
 
   useEffect(() => {
@@ -28,6 +29,14 @@ export function NotesExportDropdown({ book, bookChapters, onExportMarkdown, onEx
       return
     }
     onExportMarkdown(book, bookChapters)
+  }
+
+  const handleExportText = () => {
+    if (!book || !bookChapters) {
+      console.error('Book data is not available')
+      return
+    }
+    onExportText(book, bookChapters)
   }
 
   const handleExportNotion = () => {
@@ -72,6 +81,16 @@ export function NotesExportDropdown({ book, bookChapters, onExportMarkdown, onEx
               Download as Markdown
             </DropdownLabel>
             <DropdownDescription>Export your highlights and notes.</DropdownDescription>
+          </DropdownItem>
+
+          <DropdownItem onClick={handleExportText}>
+            <DropdownLabel className="flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="size-4 shrink-0" fill="currentColor">
+                <path d="M2 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1H2zm1.5 3h9v1h-9V5zm0 2.5h9v1h-9v-1zm0 2.5h6v1h-6v-1z" />
+              </svg>
+              Download as Plain Text
+            </DropdownLabel>
+            <DropdownDescription>Export your highlights and notes as a .txt file.</DropdownDescription>
           </DropdownItem>
 
           <DropdownDivider />
