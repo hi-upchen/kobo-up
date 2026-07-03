@@ -9,7 +9,7 @@ import {
   IBookChapter
 } from "@/types/kobo";
 import { KoboService } from '@/services/koboService';
-import { exportBookToNotion, fetchNotionPages, NotionPage } from '@/services/notionExportService';
+import { exportBookToNotion, fetchNotionPages, NotionPage, NotionReauthRequiredError } from '@/services/notionExportService';
 import { pushToDataLayer } from '@/utils/gtm';
 
 import { NotesHeader } from './components/NotesHeader'
@@ -21,6 +21,8 @@ interface Toast {
   type: 'loading' | 'success' | 'error'
   message: string
   notionUrl?: string
+  /** Optional recovery action rendered as a button below the message (e.g. "Reconnect to Notion"), so error toasts aren't a dead end. */
+  action?: { label: string; onClick: () => void }
 }
 
 interface PagePickerState {
@@ -155,6 +157,19 @@ function NotesPageContent() {
   };
 
   /**
+   * Sends the user through the Notion OAuth flow again. Used as the recovery
+   * action on "connection expired" error toasts — a full page navigation is
+   * required (not just a fetch) because Notion re-auth is a redirect-based
+   * OAuth flow, and returning to this page also remounts NotesExportDropdown
+   * so it re-checks connection status instead of continuing to show a stale
+   * "connected" state.
+   */
+  const redirectToNotionReconnect = () => {
+    const returnUrl = window.location.pathname;
+    window.location.href = `/api/notion/auth?returnUrl=${encodeURIComponent(returnUrl)}`;
+  };
+
+  /**
    * Generates and downloads a single book's notes/highlights as a Markdown
    * file, then records an `export_complete` funnel event so the
    * export-to-donation conversion rate can be measured downstream in GA4.
@@ -201,6 +216,14 @@ function NotesPageContent() {
       setPagePicker({ pages, book, chapters });
     } catch (error) {
       console.error('Notion pages error:', error);
+      if (error instanceof NotionReauthRequiredError) {
+        setToast({
+          type: 'error',
+          message: 'Your Notion connection has expired.',
+          action: { label: 'Reconnect to Notion', onClick: redirectToNotionReconnect },
+        });
+        return;
+      }
       setToast({ type: 'error', message: 'Failed to load Notion pages.' });
     }
   }, [isExportingNotion]);
@@ -230,10 +253,24 @@ function NotesPageContent() {
 
       if (result.success) {
         pushToDataLayer({ event: 'notion_export_complete', format: 'notion', scope: 'single_book' });
+        // Image uploads can fail independently of the page export (bad token,
+        // rate limits, network blips) without failing the whole export — the
+        // export route falls back to a text placeholder per skipped image.
+        // Surface that here so the user knows to go check, instead of only
+        // discovering missing images later inside Notion.
+        const imageWarning = result.imagesFailed
+          ? ` (${result.imagesFailed} image${result.imagesFailed === 1 ? '' : 's'} could not be uploaded and ${result.imagesFailed === 1 ? 'was' : 'were'} skipped)`
+          : '';
         setToast({
           type: 'success',
-          message: 'Exported to Notion successfully!',
+          message: `Exported to Notion successfully!${imageWarning}`,
           notionUrl: result.pageUrl,
+        });
+      } else if (result.errorCode === 'reauth_required') {
+        setToast({
+          type: 'error',
+          message: result.error ?? 'Your Notion connection has expired.',
+          action: { label: 'Reconnect to Notion', onClick: redirectToNotionReconnect },
         });
       } else {
         setToast({ type: 'error', message: result.error ?? 'Export to Notion failed.' });
@@ -349,6 +386,14 @@ function NotesPageContent() {
                 >
                   Open in Notion
                 </a>
+              )}
+              {toast.action && (
+                <button
+                  onClick={toast.action.onClick}
+                  className="mt-1 inline-block rounded-lg bg-white/20 px-4 py-2 text-sm font-medium hover:bg-white/30 transition"
+                >
+                  {toast.action.label}
+                </button>
               )}
               {toast.type !== 'loading' && (
                 <button

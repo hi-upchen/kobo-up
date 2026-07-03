@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import type { BlockObjectRequest } from '@notionhq/client/build/src/api-endpoints'
-import { getNotionSession } from '@/lib/notion/session'
+import { getNotionSession, clearNotionSession } from '@/lib/notion/session'
+import { isNotionAuthError, withNotionRateLimitRetry } from '@/lib/notion/retry'
 import { buildBookPageBlocks } from '@/utils/notionBlockBuilder'
 import { IBookChapter } from '@/types/kobo'
 
@@ -79,10 +80,14 @@ async function appendBlocksInBatches(
   for (let i = 0; i < blocks.length; i += BATCH_SIZE) {
     if (isAborted()) break
     const batch = blocks.slice(i, i + BATCH_SIZE)
-    await notion.blocks.children.append({
-      block_id: blockId,
-      children: batch as BlockObjectRequest[],
-    })
+    // Retry on transient 429s so one rate-limited batch doesn't fail an
+    // otherwise-successful large export (books can need dozens of batches).
+    await withNotionRateLimitRetry(() =>
+      notion.blocks.children.append({
+        block_id: blockId,
+        children: batch as BlockObjectRequest[],
+      })
+    )
     totalCreated += batch.length
     onProgress?.(totalCreated, totalBlocks)
   }
@@ -163,22 +168,30 @@ export async function POST(request: NextRequest) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
       }
 
+      // Tracks whether notion.pages.create() succeeded, so a later failure can
+      // accurately say whether a partial page exists in the user's Notion
+      // workspace instead of always guessing "may have been created".
+      let pageCreated = false
+
       try {
         // Create Notion page
         sendEvent({ stage: 'Creating page...', current: 0, total: 0 })
-        const page = await notion.pages.create({
-          parent: { page_id: bookData.parentPageId },
-          properties: {
-            title: {
-              title: [{ text: { content: bookData.bookTitle.slice(0, 2000) } }],
+        const page = await withNotionRateLimitRetry(() =>
+          notion.pages.create({
+            parent: { page_id: bookData.parentPageId },
+            properties: {
+              title: {
+                title: [{ text: { content: bookData.bookTitle.slice(0, 2000) } }],
+              },
             },
-          },
-          children: [
-            ...(bookData.author ? [buildAuthorBlock(bookData.author)] : []),
-            buildDividerBlock(),
-          ] as BlockObjectRequest[],
-        })
+            children: [
+              ...(bookData.author ? [buildAuthorBlock(bookData.author)] : []),
+              buildDividerBlock(),
+            ] as BlockObjectRequest[],
+          })
+        )
 
+        pageCreated = true
         const pageId = page.id
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pageUrl = (page as any).url as string | undefined
@@ -224,11 +237,30 @@ export async function POST(request: NextRequest) {
         })
       } catch (err) {
         console.error('Notion export error:', err)
-        sendEvent({
-          stage: 'done',
-          success: false,
-          error: `Export failed: ${err instanceof Error ? err.message : 'Unknown error'}. A partial page may have been created in Notion.`,
-        })
+
+        if (isNotionAuthError(err)) {
+          // The token was valid enough to pass getNotionSession() but Notion
+          // rejected it mid-export (revoked/expired). Clear the session so the
+          // client stops showing "connected" and surface a `code` the client
+          // can key off of to offer a one-click reconnect instead of a dead
+          // end error message.
+          await clearNotionSession()
+          sendEvent({
+            stage: 'done',
+            success: false,
+            error: 'Your Notion connection has expired. Please reconnect and try again.',
+            code: 'reauth_required',
+          })
+        } else {
+          const partialPageNote = pageCreated
+            ? ' A partial page was created in Notion — check your workspace before retrying to avoid a duplicate.'
+            : ' No page was created in Notion; it is safe to retry.'
+          sendEvent({
+            stage: 'done',
+            success: false,
+            error: `Export failed: ${err instanceof Error ? err.message : 'Unknown error'}.${partialPageNote}`,
+          })
+        }
       } finally {
         try { controller.close() } catch { /* already closed */ }
       }

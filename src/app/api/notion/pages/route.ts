@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
-import { getNotionSession } from '@/lib/notion/session'
+import { getNotionSession, clearNotionSession } from '@/lib/notion/session'
+import { isNotionAuthError } from '@/lib/notion/retry'
 
 interface NotionPage {
   id: string
@@ -45,6 +46,17 @@ export async function GET() {
 
     return NextResponse.json({ pages })
   } catch (err) {
+    if (isNotionAuthError(err)) {
+      // The stored token was revoked or expired on Notion's side (e.g. the user
+      // removed the integration from their workspace). Clear the now-useless
+      // session so the client stops presenting the "connected" state and can
+      // prompt the user to reconnect instead of failing the same way forever.
+      await clearNotionSession()
+      return NextResponse.json(
+        { error: 'Notion connection expired. Please reconnect.', code: 'reauth_required' },
+        { status: 401 }
+      )
+    }
     console.error('Notion pages search error:', err)
     return NextResponse.json(
       { error: `Failed to fetch pages: ${err instanceof Error ? err.message : 'Unknown error'}` },
