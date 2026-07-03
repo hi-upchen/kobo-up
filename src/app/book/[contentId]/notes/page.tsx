@@ -15,6 +15,7 @@ import { pushToDataLayer } from '@/utils/gtm';
 import { NotesHeader } from './components/NotesHeader'
 import { NotesSection } from './components/NotesSection'
 import { generateMarkdownContent, downloadMarkdownFile } from '@/utils/markdownGenerator'
+import { generateTextContent, downloadTextFile } from '@/utils/textGenerator'
 
 interface Toast {
   type: 'loading' | 'success' | 'error'
@@ -167,6 +168,21 @@ function NotesPageContent() {
     pushToDataLayer({ event: 'export_complete', format: 'markdown', scope: 'single_book' });
   };
 
+  /**
+   * Generates and downloads a single book's notes/highlights as a plain-text
+   * (.txt) file, then records an `export_complete` funnel event through the
+   * same code path as the Markdown export so the export-to-donation
+   * conversion rate can be measured downstream in GA4 regardless of format.
+   *
+   * @param book - The book whose notes are being exported.
+   * @param chapters - The book's chapters with their attached notes/highlights.
+   */
+  const handleExportText = (book: IBook, chapters: IBookChapter[]) => {
+    const content = generateTextContent(book, chapters);
+    downloadTextFile(`${book.bookTitle}.txt`, content);
+    pushToDataLayer({ event: 'export_complete', format: 'txt', scope: 'single_book' });
+  };
+
   const handleExportNotion = useCallback(async (book: IBook, chapters: IBookChapter[]) => {
     if (isExportingNotion) return;
 
@@ -249,6 +265,7 @@ function NotesPageContent() {
         book={book}
         sponsorShouldBeShownOnChapterIdx={sponsorShouldBeShwonOnChapterIdx}
         onExportMarkdown={handleExportMarkdown}
+        onExportText={handleExportText}
         onExportNotion={handleExportNotion}
         onDisconnectNotion={handleDisconnectNotion}
       />
