@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import type { IBook } from '@/types/kobo'
 import { ExportOptionsModal, type ExportFormat, type ExportStructure } from './ExportOptionsModal'
 import { ExportService } from '@/services/exportService'
+import { pushToDataLayer } from '@/utils/gtm'
 
 interface ExportActionBarProps {
   books: IBook[]
@@ -39,6 +40,17 @@ export function ExportActionBar({
     setIsModalOpen(true)
   }
 
+  /**
+   * Runs the confirmed multi-book export (all books or the current
+   * selection) as either a ZIP of per-book Markdown files or one combined
+   * Markdown file. On success, records an `export_complete` funnel event
+   * with the resulting structure and scope so the export-to-donation
+   * conversion rate can be measured downstream in GA4; failures (caught
+   * below) are not counted as completions.
+   *
+   * @param _format - Requested export format from the options modal (currently unused — both structures produce Markdown).
+   * @param structure - Whether to export as a `'zip'` of separate files or a single `'combined'` file.
+   */
   const handleExportConfirm = async (_format: ExportFormat, structure: ExportStructure) => {
     const booksToExport = exportMode === 'all'
       ? booksWithContent
@@ -52,6 +64,14 @@ export function ExportActionBar({
         // Export as single combined file
         await ExportService.exportBooksAsCombinedFile(booksToExport, exportMode)
       }
+      // Fire once the download has actually been generated, so failed
+      // exports (caught below) are not counted as completions.
+      pushToDataLayer({
+        event: 'export_complete',
+        format: 'markdown',
+        structure,
+        scope: exportMode === 'all' ? 'all_books' : 'selected_books',
+      })
     } catch (error) {
       console.error('Export failed:', error)
       // You could add error handling UI here if needed

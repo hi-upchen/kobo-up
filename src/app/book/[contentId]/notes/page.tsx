@@ -10,6 +10,7 @@ import {
 } from "@/types/kobo";
 import { KoboService } from '@/services/koboService';
 import { exportBookToNotion, fetchNotionPages, NotionPage } from '@/services/notionExportService';
+import { pushToDataLayer } from '@/utils/gtm';
 
 import { NotesHeader } from './components/NotesHeader'
 import { NotesSection } from './components/NotesSection'
@@ -152,9 +153,18 @@ function NotesPageContent() {
     router.push('/books');
   };
 
+  /**
+   * Generates and downloads a single book's notes/highlights as a Markdown
+   * file, then records an `export_complete` funnel event so the
+   * export-to-donation conversion rate can be measured downstream in GA4.
+   *
+   * @param book - The book whose notes are being exported.
+   * @param chapters - The book's chapters with their attached notes/highlights.
+   */
   const handleExportMarkdown = (book: IBook, chapters: IBookChapter[]) => {
     const content = generateMarkdownContent(book, chapters);
     downloadMarkdownFile(`${book.bookTitle}.md`, content);
+    pushToDataLayer({ event: 'export_complete', format: 'markdown', scope: 'single_book' });
   };
 
   const handleExportNotion = useCallback(async (book: IBook, chapters: IBookChapter[]) => {
@@ -179,6 +189,15 @@ function NotesPageContent() {
     }
   }, [isExportingNotion]);
 
+  /**
+   * Sends the currently picked book to the chosen Notion page and reports
+   * progress via toast messages. On success, records a
+   * `notion_export_complete` funnel event (failures are not counted as
+   * completions) so the export-to-donation conversion rate can be measured
+   * downstream in GA4.
+   *
+   * @param parentPageId - Notion page ID the export will be created under.
+   */
   const startNotionExport = useCallback(async (parentPageId: string) => {
     if (!pagePicker) return;
     const { book, chapters } = pagePicker;
@@ -194,6 +213,7 @@ function NotesPageContent() {
       });
 
       if (result.success) {
+        pushToDataLayer({ event: 'notion_export_complete', format: 'notion', scope: 'single_book' });
         setToast({
           type: 'success',
           message: 'Exported to Notion successfully!',

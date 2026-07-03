@@ -69,6 +69,16 @@ const Footer = () => {
     }
   };
 
+  /**
+   * Records a `donate_click` event for the footer's Buy Me a Coffee link
+   * before the browser follows it. The link keeps its default
+   * `target="_blank"` navigation — this only pushes to the dataLayer and
+   * does not call `preventDefault`.
+   */
+  const handleDonateClick = () => {
+    pushToDataLayer({ event: 'donate_click', placement: 'footer' });
+  };
+
   const handleDelete = async () => {
     try {
       setIsDeleteConfirmOpen(false);
@@ -165,10 +175,11 @@ const Footer = () => {
           </svg>
         </a>
 
-        <a 
-          href="https://www.buymeacoffee.com/hi.upchen" 
-          target="_blank" 
+        <a
+          href="https://www.buymeacoffee.com/hi.upchen"
+          target="_blank"
           rel="noopener noreferrer"
+          onClick={handleDonateClick}
           className="mr-4 hover:opacity-80 transition"
         >
           <Image 

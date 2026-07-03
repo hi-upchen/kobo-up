@@ -138,7 +138,7 @@ export function ChapterSection({ chapter, chapterIdx, sponsorShouldBeShownOnChap
       )}
 
       {sponsorShouldBeShownOnChapterIdx === chapterIdx && (
-        <DonationCard />
+        <DonationCard placement="donation_card_notes" />
       )}
     </div>
   )
