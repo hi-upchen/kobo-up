@@ -17,6 +17,23 @@ export interface NotionExportResult {
   success: boolean
   pageUrl?: string
   error?: string
+  /** Set when the failure is caused by an expired/revoked Notion token, so the UI can offer a reconnect action instead of a dead-end message. */
+  errorCode?: string
+  /** Count of markup images that failed to upload and were replaced with a text placeholder. Undefined when all images succeeded (or there were none). */
+  imagesFailed?: number
+}
+
+/**
+ * Thrown by {@link fetchNotionPages} when the server reports the stored
+ * Notion token is no longer valid (`code: 'reauth_required'`). Callers use
+ * this to distinguish "user needs to reconnect" from a generic network/API
+ * failure so they can offer a one-click reconnect action.
+ */
+export class NotionReauthRequiredError extends Error {
+  constructor() {
+    super('Notion connection expired')
+    this.name = 'NotionReauthRequiredError'
+  }
 }
 
 /**
@@ -42,10 +59,19 @@ export async function disconnectNotion(): Promise<void> {
 
 /**
  * Fetch the user's available Notion pages for export targeting.
+ *
+ * @throws {NotionReauthRequiredError} If the server reports the stored Notion
+ *   token has expired or been revoked — callers should offer a reconnect
+ *   action rather than a generic error.
+ * @throws {Error} For any other failure to fetch pages.
  */
 export async function fetchNotionPages(): Promise<NotionPage[]> {
   const res = await fetch('/api/notion/pages')
   if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    if (res.status === 401 && body.code === 'reauth_required') {
+      throw new NotionReauthRequiredError()
+    }
     throw new Error('Failed to fetch Notion pages')
   }
   const data = await res.json()
@@ -170,8 +196,18 @@ export async function exportBookToNotion(
       return { bookmarkId, fileUploadId }
     }
   )
+  // Count uploads that failed (bad token, rate-limited past retry budget,
+  // network error, etc.) so a successful export can still tell the user some
+  // images were skipped, instead of silently shipping a page with fewer
+  // images than the source book — the export route falls back to a text
+  // placeholder per skipped image, so the page itself still succeeds.
+  let imagesFailedCount = 0
   for (const { bookmarkId, fileUploadId } of uploadResults) {
-    if (fileUploadId) imageUploads[bookmarkId] = fileUploadId
+    if (fileUploadId) {
+      imageUploads[bookmarkId] = fileUploadId
+    } else {
+      imagesFailedCount++
+    }
   }
 
   // 5. Send JSON bookData with imageUploads map to export API
@@ -196,6 +232,7 @@ export async function exportBookToNotion(
     return {
       success: false,
       error: body.error ?? `Export failed (${res.status})`,
+      errorCode: body.code,
     }
   }
 
@@ -227,8 +264,12 @@ export async function exportBookToNotion(
         if (data.stage === 'done') {
           doneEventReceived = true
           result = data.success
-            ? { success: true, pageUrl: data.pageUrl }
-            : { success: false, error: data.error }
+            ? {
+                success: true,
+                pageUrl: data.pageUrl,
+                imagesFailed: imagesFailedCount > 0 ? imagesFailedCount : undefined,
+              }
+            : { success: false, error: data.error, errorCode: data.code }
         } else {
           onProgress?.(data.stage, data.current ?? 0, data.total ?? 0)
         }
