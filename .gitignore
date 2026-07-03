@@ -37,3 +37,11 @@ yarn-error.log*
 next-env.d.ts
 
 play/
+
+# AI workflow artifacts
+docs/superpowers/plans/
+docs/superpowers/reports/
+docs/plans/
+.claude/plans/
+.claude/scratch/
+.superpowers/

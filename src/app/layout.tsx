@@ -19,7 +19,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-white lg:bg-zinc-100 dark:bg-zinc-900 dark:lg:bg-zinc-950">
       <head>
-        <meta name="description" content="Export Kobo highlights and notes instantly with our browser-based tool. Works with sideloaded books, auto-detects database, no installation required. Solve common Kobo export problems." />
         <GoogleTagManager gtmId="GTM-M82SLQZ6" />
       </head>
 
