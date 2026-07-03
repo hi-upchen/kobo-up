@@ -85,7 +85,34 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="footer flex justify-center items-center pt-4 px-2 py-2 border-t text-zinc-400 dark:text-zinc-500 text-sm border-zinc-900/10 dark:border-zinc-100/10 mt-6 sm:mt-12 lg:mt-24">
+      {/* Guides link section: surfaces the SEO guide pages (troubleshooting,
+          Notion export, Markdown/Obsidian export) on every page so crawlers
+          and readers can reach them from anywhere on the site. */}
+      <nav
+        aria-label="Guides"
+        className="flex flex-wrap justify-center gap-x-6 gap-y-1 px-2 pt-6 text-sm text-zinc-500 dark:text-zinc-400 mt-6 sm:mt-12 lg:mt-24"
+      >
+        <NextLink
+          href="/guides/kobo-export-not-working"
+          className="hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
+        >
+          Kobo Export Not Working?
+        </NextLink>
+        <NextLink
+          href="/guides/export-kobo-highlights-to-notion"
+          className="hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
+        >
+          Export Kobo Highlights to Notion
+        </NextLink>
+        <NextLink
+          href="/guides/export-kobo-highlights-to-markdown-obsidian"
+          className="hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
+        >
+          Export Kobo Highlights to Markdown/Obsidian
+        </NextLink>
+      </nav>
+
+      <footer className="footer flex justify-center items-center pt-4 px-2 py-2 border-t text-zinc-400 dark:text-zinc-500 text-sm border-zinc-900/10 dark:border-zinc-100/10 mt-2">
         <p className="mr-4 ml-auto hover:scale-105 transition">© 出走工程師 Up</p>
 
         <NextLink
