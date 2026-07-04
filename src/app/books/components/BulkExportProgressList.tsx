@@ -16,6 +16,10 @@ export interface BulkExportBookStatus {
   state: 'pending' | 'exporting' | 'success' | 'failed' | 'skipped'
   /** Current export stage text (e.g. "Uploading images"), shown only while `state === 'exporting'`. */
   stage?: string
+  /** Item index within the current stage (e.g. the 5th of 20 images), 1-based. Paired with `stageTotal` to render a "5/20" counter next to the stage text. */
+  stageCurrent?: number
+  /** Total item count for the current stage. Stages with a single logical step (e.g. "Sending to Notion...") report 1 here, which suppresses the counter since it would just say "0/1" or "1/1" for something that isn't really a countable list. */
+  stageTotal?: number
   /** Failure reason, shown only when `state === 'failed'`. */
   error?: string
 }
@@ -71,7 +75,10 @@ export function BulkExportProgressList({ books, settledCount, total }: BulkExpor
             </span>
             <span className="flex-1 truncate text-gray-900 dark:text-zinc-100">{book.bookTitle}</span>
             {book.state === 'exporting' && book.stage && (
-              <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">{book.stage}</span>
+              <span className="text-xs text-gray-400 dark:text-zinc-500 shrink-0">
+                {book.stage}
+                {book.stageTotal !== undefined && book.stageTotal > 1 && ` ${book.stageCurrent ?? 0}/${book.stageTotal}`}
+              </span>
             )}
             {book.state === 'failed' && book.error && (
               <span className="text-xs text-red-500 dark:text-red-400 truncate max-w-[40%]" title={book.error}>
