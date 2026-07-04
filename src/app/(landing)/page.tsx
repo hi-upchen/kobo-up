@@ -12,8 +12,7 @@ import { ErrorMessage } from '@/components/ErrorMessage'
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
 import { Text, TextLink } from '@/components/text'
 import FAQ from '@/app/components/FAQ'
-
-type FolderPickerSupport = 'directory-api' | 'webkitdirectory' | 'file-only'
+import { getUploadInstruction, type FolderPickerSupport } from './utils/uploadInstruction'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -21,6 +20,9 @@ export default function LandingPage() {
   const [error, setError] = useState<string | null>(null)
   const [supportLevel, setSupportLevel] = useState<FolderPickerSupport>('directory-api')
   const [hasStoredData, setHasStoredData] = useState(false)
+  // Browser-specific upload guidance, disclosed before the picker is used
+  // rather than only after a failed selection (see getUploadInstruction).
+  const uploadInstruction = getUploadInstruction(supportLevel)
 
   useEffect(() => {
     // Detect folder picker support level
@@ -217,7 +219,7 @@ export default function LandingPage() {
               onClick={scrollToUpload}
               className="rounded-md bg-indigo-600 px-6 py-3 text-lg font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              Start Exporting Now ↓
+              Export My Highlights Now ↓
             </button>
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
@@ -227,18 +229,15 @@ export default function LandingPage() {
             </button>
           </div>
 
-          {/* New Feature Notice */}
+          {/* New Feature Notice — capped at 2 so the freshest shipped features stay visible instead of stacking indefinitely. */}
           <div className="mt-8 text-center space-y-1">
             <Text className="text-sm text-gray-600 dark:text-gray-400">
               ✨ <span className="font-medium">New:</span>{' '}
               <svg className="inline-block h-4 w-4 -mt-0.5 text-gray-800 dark:text-gray-200" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.968c-.42-.326-.981-.7-2.055-.607L3.01 2.295c-.466.046-.56.28-.374.466zm.793 3.08v13.904c0 .747.373 1.027 1.214.98l14.523-.84c.841-.046.935-.56.935-1.167V6.354c0-.606-.233-.933-.748-.887l-15.177.887c-.56.047-.747.327-.747.933zm14.337.745c.093.42 0 .84-.42.888l-.7.14v10.264c-.608.327-1.168.514-1.635.514-.748 0-.935-.234-1.495-.933l-4.577-7.186v6.952L12.21 19s0 .84-1.168.84l-3.222.186c-.093-.186 0-.653.327-.746l.84-.233V9.854L7.822 9.76c-.094-.42.14-1.026.793-1.073l3.456-.233 4.764 7.279v-6.44l-1.215-.139c-.093-.514.28-.887.747-.933zM1.936 1.035l13.31-.98c1.634-.14 2.055-.047 3.082.7l4.249 2.986c.7.513.934.653.934 1.213v16.378c0 1.026-.373 1.634-1.68 1.726l-15.458.934c-.98.047-1.448-.093-1.962-.747l-3.129-4.06c-.56-.747-.793-1.306-.793-1.96V2.667c0-.839.374-1.54 1.447-1.632z"/></svg>{' '}
-              Export directly to Notion — with full handwriting annotation support!
+              Export directly to Notion — one book or your whole library in bulk, with full handwriting annotation support!
             </Text>
             <Text className="text-sm text-gray-600 dark:text-gray-400">
               ✨ <span className="font-medium">New:</span> ✏️ Handwriting annotations from Kobo Stylus now display alongside your highlights!
-            </Text>
-            <Text className="text-sm text-gray-600 dark:text-gray-400">
-              ✨ <span className="font-medium">New:</span> 🟡🔴🔵🟢 highlight colors now display and export!
             </Text>
           </div>
         </div>
@@ -297,10 +296,17 @@ export default function LandingPage() {
               </div>
               <h3 className="mt-6 text-xl font-semibold text-gray-900 dark:text-gray-100">Export Everything</h3>
               <Text className="mt-2 text-base leading-6">
-                View all your notes and highlights in one clean interface. Export to Markdown or text format.
+                View all your notes and highlights in one clean interface. Export straight to Notion, or as Markdown or plain text — one book at a time or your whole library at once.
               </Text>
             </div>
           </div>
+        </div>
+
+        <div className="mt-12 text-center">
+          <Text className="text-sm text-gray-500">
+            Having trouble? Read the full{' '}
+            <TextLink href="/guides/kobo-export-not-working">troubleshooting guide</TextLink>.
+          </Text>
         </div>
       </div>
 
@@ -312,8 +318,16 @@ export default function LandingPage() {
               Ready to Export Your Notes?
             </Heading>
             <Text className="mt-4 text-lg leading-8 text-gray-600">
-              Connect your Kobo and select root folder
+              {uploadInstruction.text}
             </Text>
+            {uploadInstruction.showGuideLink && (
+              <Text className="mt-2 text-sm text-gray-500">
+                Not sure where that is? See our{' '}
+                <TextLink href="/guides/export-kobo-highlights-to-markdown-obsidian">
+                  step-by-step guide
+                </TextLink>.
+              </Text>
+            )}
             <Text className="mt-2 text-sm text-gray-500">
               Works with all modern browsers
             </Text>
@@ -340,12 +354,6 @@ export default function LandingPage() {
               )}
             />
           )}
-
-          <div className="mt-8 text-center">
-            <Text className="text-sm text-gray-500">
-              Don't have your Kobo handy? <span className="text-indigo-600 font-medium">Try our sample file first</span> (coming soon)
-            </Text>
-          </div>
         </div>
       </div>
 
@@ -413,7 +421,7 @@ export default function LandingPage() {
               </div>
               <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Multiple Export Options</h3>
               <Text className="mt-2 text-sm leading-6">
-                Export to Markdown for note apps like Obsidian and Notion, or plain text format. Export all your books at once or individual books separately.
+                Export directly to Notion, or as Markdown for apps like Obsidian, or plain text — one book at a time or your entire library in bulk.
               </Text>
             </div>
 
@@ -584,12 +592,6 @@ export default function LandingPage() {
               >
                 Export Your Notes Now →
               </button>
-            </div>
-            
-            <div className="mt-6">
-              <Text className="text-sm text-gray-500">
-                <em>Coming soon: Try it risk-free with our sample database to see the magic before connecting your device.</em>
-              </Text>
             </div>
           </div>
         </div>
