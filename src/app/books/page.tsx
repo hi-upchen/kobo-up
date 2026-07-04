@@ -11,6 +11,7 @@ import { BooksHeader } from './components/BooksHeader'
 import { BooksList } from './components/BooksList'
 import { ExportActionBar } from './components/ExportActionBar'
 import { BookRowSkeleton } from './components/BookRowSkeleton'
+import { DemoBanner } from './components/DemoBanner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 
 export default function BooksPage() {
@@ -20,6 +21,7 @@ export default function BooksPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [donationShouldBeShownAfterBookIndex, setDonationShouldBeShownAfterBookIndex] = useState<number | null>(null)
+  const [isDemoData, setIsDemoData] = useState(false)
 
   useEffect(() => {
     const initializePage = async () => {
@@ -43,6 +45,7 @@ export default function BooksPage() {
         const loadedBooks = await KoboService.loadBooksWithNotes()
 
         setBooks(loadedBooks)
+        setIsDemoData(KoboService.isDemoData())
 
         // Report the returning-user "load from storage" activation path.
         // This mount re-runs on every visit to /books (including right
@@ -213,6 +216,8 @@ export default function BooksPage() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-2 md:px-6 lg:px-8 py-12">
+        {isDemoData && <DemoBanner onReUpload={handleReUpload} />}
+
         <BooksHeader
           onReUpload={handleReUpload}
         />
