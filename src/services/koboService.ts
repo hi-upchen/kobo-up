@@ -1,5 +1,6 @@
 import { APP_CONSTANTS } from '../constants/appConstants'
 import type { IBook, INote, IHighlight, IBookHighlightNAnnotation, IBookChapter } from '../types/kobo'
+import { DEMO_DATABASE_PATH } from '../constants/demoConstants'
 import { ErrorService } from './errorService'
 import {
   connKoboDB,
@@ -93,6 +94,13 @@ export class KoboService {
       // Convert File to ArrayBuffer and store in IndexedDB
       const arrayBuffer = await file.arrayBuffer()
       await this.saveToIndexedDB(arrayBuffer)
+
+      // Every successful load defaults to "not demo data" — the demo
+      // loader (see `handleDatabaseSelect` with `method: 'demo'` in the
+      // landing page) re-marks it right after this call returns. This
+      // means a real upload that replaces a previously loaded demo
+      // database correctly clears the flag without any extra plumbing.
+      this.clearDemoFlag()
 
     } catch (error) {
       // Re-throw KoboErrors as-is to preserve specific messages
@@ -462,6 +470,9 @@ export class KoboService {
       // new session transition instead of being silently skipped.
       this.hasFiredLoadedEvent = false
 
+      // A cleared library is no longer demo data by definition.
+      this.clearDemoFlag()
+
       // Clear IndexedDB
       if (typeof indexedDB !== 'undefined') {
         await indexedDB.deleteDatabase('KoboDB')
@@ -473,6 +484,77 @@ export class KoboService {
     } catch (error) {
       console.warn('Failed to clear stored data:', error)
     }
+  }
+
+  /**
+   * localStorage key backing the demo-data marker. A plain flag (rather than
+   * storing it alongside the IndexedDB blob) keeps the demo/real distinction
+   * independent of the database bytes themselves — the loaded database is a
+   * completely ordinary Kobo database either way, so nothing about the data
+   * itself distinguishes it.
+   */
+  private static readonly DEMO_FLAG_STORAGE_KEY = 'koboUp:isDemoData'
+
+  /**
+   * Fetches the sanitized sample Kobo database shipped at
+   * `public/demo/KoboReader-demo.sqlite` and wraps it as a `File`, so callers
+   * can hand it to `initializeDatabase()` — the exact same load path a real
+   * uploaded file takes (extension/size validation, sql.js parsing,
+   * IndexedDB storage).
+   *
+   * @returns A `File` containing the sanitized demo database.
+   * @throws {KoboError} If the demo file can't be fetched (e.g. offline, deploy misconfiguration).
+   */
+  static async fetchDemoFile(): Promise<File> {
+    let response: Response
+    try {
+      response = await fetch(DEMO_DATABASE_PATH)
+    } catch (error) {
+      throw ErrorService.handleFileError(
+        'Could not load the sample library. Please check your connection and try again.',
+        { originalError: (error as Error).message }
+      )
+    }
+
+    if (!response.ok) {
+      throw ErrorService.handleFileError(
+        `Could not load the sample library (server returned ${response.status}).`
+      )
+    }
+
+    const blob = await response.blob()
+    return new File([blob], 'KoboReader-demo.sqlite', { type: 'application/x-sqlite3' })
+  }
+
+  /**
+   * Marks the currently loaded database as the sanitized demo library, so
+   * `/books` can show the "you're browsing the sample library" banner. Only
+   * meaningful right after a successful `fetchDemoFile()` + `initializeDatabase()`
+   * pair — see the landing page's `handleTryDemo`.
+   */
+  static markAsDemoData(): void {
+    if (typeof localStorage === 'undefined') return
+    localStorage.setItem(this.DEMO_FLAG_STORAGE_KEY, 'true')
+  }
+
+  /**
+   * Reports whether the currently stored database is the sanitized demo
+   * library rather than a real uploaded Kobo database.
+   *
+   * @returns True if the demo flag is set.
+   */
+  static isDemoData(): boolean {
+    if (typeof localStorage === 'undefined') return false
+    return localStorage.getItem(this.DEMO_FLAG_STORAGE_KEY) === 'true'
+  }
+
+  /**
+   * Clears the demo-data marker. Called on every successful `initializeDatabase()`
+   * (so a real upload always starts from "not demo") and from `clearStoredData()`.
+   */
+  private static clearDemoFlag(): void {
+    if (typeof localStorage === 'undefined') return
+    localStorage.removeItem(this.DEMO_FLAG_STORAGE_KEY)
   }
 
   /**

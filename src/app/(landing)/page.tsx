@@ -13,6 +13,7 @@ import { HeroHeading, Heading, Subheading } from '@/components/heading'
 import { Text, TextLink } from '@/components/text'
 import FAQ from '@/app/components/FAQ'
 import { getUploadInstruction, type FolderPickerSupport } from './utils/uploadInstruction'
+import type { KoboDbLoadMethod } from '@/types/kobo'
 
 export default function LandingPage() {
   const router = useRouter()
@@ -56,20 +57,29 @@ export default function LandingPage() {
    * and not on failure — so GA4 can measure the visit-to-activation step of
    * the funnel.
    *
-   * @param file - The selected `KoboReader.sqlite`/`Kobo.sqlite` file.
+   * @param file - The selected `KoboReader.sqlite`/`Kobo.sqlite` file, or the
+   *   fetched sample database when `method` is `'demo'`.
    * @param method - Which selection UI produced this file: `folder_picker`
    *   for both the File System Access API and `webkitdirectory` folder
    *   pickers (indistinguishable to the user, so collapsed into one
-   *   analytics value), or `file_upload` for the direct single-file input
-   *   fallback used by browsers without folder-picker support.
+   *   analytics value), `file_upload` for the direct single-file input
+   *   fallback used by browsers without folder-picker support, or `demo`
+   *   for the no-signup sample library (see `handleTryDemo`).
    */
-  const handleDatabaseSelect = async (file: File, method: 'folder_picker' | 'file_upload' = 'file_upload') => {
+  const handleDatabaseSelect = async (file: File, method: KoboDbLoadMethod = 'file_upload') => {
     setIsLoading(true)
     setError(null)
 
     try {
       // Validate and initialize database using our clean service
       await KoboService.initializeDatabase(file)
+
+      // Re-mark as demo data now that the load succeeded — initializeDatabase
+      // itself always clears the flag first, so a failed demo load never
+      // leaves a stale "demo" marker around.
+      if (method === 'demo') {
+        KoboService.markAsDemoData()
+      }
 
       if (KoboService.consumeLoadedTransition()) {
         const bookCount = await KoboService.getBookCount()
@@ -174,9 +184,34 @@ export default function LandingPage() {
   }
 
   const scrollToUpload = () => {
-    document.getElementById('upload-section')?.scrollIntoView({ 
-      behavior: 'smooth' 
+    document.getElementById('upload-section')?.scrollIntoView({
+      behavior: 'smooth'
     })
+  }
+
+  /**
+   * Loads the sanitized sample library instead of a real Kobo database, for
+   * visitors without their device handy (e.g. on mobile, or at work) — a
+   * no-signup way to see the full browse/export experience. Fetches the
+   * demo file, then hands it to `handleDatabaseSelect` tagged as `'demo'` so
+   * it runs through the exact same validation/parsing/storage/navigation
+   * path as a real upload; `/books` then shows a banner (via
+   * `KoboService.isDemoData()`) pointing back to the real upload flow.
+   */
+  const handleTryDemo = async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const file = await KoboService.fetchDemoFile()
+      await handleDatabaseSelect(file, 'demo')
+    } catch (error) {
+      const errorMessage = ErrorService.getErrorMessage(error as Error)
+      setError(errorMessage)
+      ErrorService.logError(error as Error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -353,6 +388,21 @@ export default function LandingPage() {
                 'Firefox cannot read the root folder of USB devices. Please select the .kobo folder inside your Kobo device instead. To show hidden folders, press ⌘+Shift+. on Mac or enable "Show hidden files" in the folder options on Windows. Alternatively, use Chrome or Edge to select the root folder directly.'
               )}
             />
+          )}
+
+          {/* Secondary, no-signup path for visitors without their Kobo handy
+              (mobile, at work, etc.) — deliberately styled as a plain text
+              link so it never competes with the primary upload action above. */}
+          {!isLoading && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={handleTryDemo}
+                className="text-sm font-medium text-gray-500 underline underline-offset-2 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400"
+              >
+                No Kobo handy? Try with a sample library →
+              </button>
+            </div>
           )}
         </div>
       </div>
