@@ -1,10 +1,13 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import type { IBook } from '@/types/kobo'
 import { ExportOptionsModal, type ExportFormat, type ExportStructure } from './ExportOptionsModal'
 import { ExportService } from '@/services/exportService'
 import { pushToDataLayer } from '@/utils/gtm'
+import { NotionBulkExportModal } from './NotionBulkExportModal'
+import { NotionOAuthReturnHandler } from './NotionOAuthReturnHandler'
+import type { BulkExportScope } from './notionBulkExportSelection'
 
 interface ExportActionBarProps {
   books: IBook[]
@@ -12,17 +15,27 @@ interface ExportActionBarProps {
   onSelectionChange: (selectedBooks: Set<string>) => void
 }
 
-export function ExportActionBar({ 
-  books, 
-  selectedBooks, 
+/** An active (or resuming) bulk Notion export session; null when none is in progress. */
+interface NotionModalState {
+  books: IBook[]
+  scope: BulkExportScope
+  /** True when this session was opened by resuming right after a Notion OAuth redirect, rather than a fresh button click. */
+  resumedAfterConnect: boolean
+}
+
+export function ExportActionBar({
+  books,
+  selectedBooks,
   onSelectionChange
 }: ExportActionBarProps) {
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [exportMode, setExportMode] = useState<'all' | 'selected'>('all')
+  const [notionModal, setNotionModal] = useState<NotionModalState | null>(null)
+  const [oauthError, setOauthError] = useState(false)
 
   // Books with content (notes or highlights)
-  const booksWithContent = books.filter(book => 
+  const booksWithContent = books.filter(book =>
     ((book.totalNotes ?? 0) > 0) || ((book.totalHighlights ?? 0) > 0)
   )
 
@@ -85,13 +98,49 @@ export function ExportActionBar({
     onSelectionChange(new Set())
   }
 
+  /** Opens the bulk Notion export flow for every book with notes/highlights (the "export all" scope). */
+  const handleExportNotionAll = () => {
+    setOauthError(false)
+    setNotionModal({ books: booksWithContent, scope: 'all_books', resumedAfterConnect: false })
+  }
+
+  /** Opens the bulk Notion export flow for the currently selected books. */
+  const handleExportNotionSelected = () => {
+    setOauthError(false)
+    setNotionModal({
+      books: books.filter(book => selectedBooks.has(book.contentId)),
+      scope: 'selected_books',
+      resumedAfterConnect: false,
+    })
+  }
+
+  /**
+   * Resumes a bulk Notion export session that was interrupted by the OAuth
+   * connect round trip — reopens the modal directly (skipping the
+   * connection check, since we just came back from a successful connect).
+   */
+  const handleResumeNotionExport = (resumedBooks: IBook[], resumedScope: BulkExportScope) => {
+    setNotionModal({ books: resumedBooks, scope: resumedScope, resumedAfterConnect: true })
+  }
+
   const selectedCount = selectedBooks.size
 
   return (
     <>
+      {/* Detects the post-Notion-OAuth redirect back to this page and resumes
+          any bulk export session that was in progress. Wrapped in its own
+          Suspense boundary because `useSearchParams` requires one. */}
+      <Suspense fallback={null}>
+        <NotionOAuthReturnHandler
+          books={books}
+          onResume={handleResumeNotionExport}
+          onError={() => setOauthError(true)}
+        />
+      </Suspense>
+
       <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-t-lg overflow-hidden relative">
         {/* Default State */}
-        <div 
+        <div
           className={`px-4 py-3 flex justify-between items-center transition-all duration-300 ${
             isSelectionMode ? 'transform -translate-y-full opacity-0' : 'transform translate-y-0 opacity-100'
           }`}
@@ -99,17 +148,26 @@ export function ExportActionBar({
           <div className="text-sm text-gray-600 dark:text-zinc-300">
             {books.length} books in your library, {booksWithContent.length} with notes
           </div>
-          <button 
-            onClick={handleExportAll}
-            className="px-3 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 rounded hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 transition-colors"
-            disabled={booksWithContent.length === 0}
-          >
-            Export All
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportNotionAll}
+              className="px-3 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 rounded hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 transition-colors"
+              disabled={booksWithContent.length === 0}
+            >
+              Export to Notion
+            </button>
+            <button
+              onClick={handleExportAll}
+              className="px-3 py-1.5 text-xs border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-zinc-200 rounded hover:border-indigo-500 hover:text-indigo-600 dark:hover:border-indigo-400 dark:hover:text-indigo-400 transition-colors"
+              disabled={booksWithContent.length === 0}
+            >
+              Export All
+            </button>
+          </div>
         </div>
 
         {/* Selection State */}
-        <div 
+        <div
           className={`absolute inset-0 px-4 py-3 bg-blue-50 dark:bg-blue-950/50 flex justify-between items-center transition-all duration-300 ${
             isSelectionMode ? 'transform translate-y-0 opacity-100' : 'transform translate-y-full opacity-0'
           }`}
@@ -118,22 +176,38 @@ export function ExportActionBar({
             <span className="text-sm text-blue-700 dark:text-blue-300">
               {selectedCount} book{selectedCount !== 1 ? 's' : ''} selected
             </span>
-            <button 
+            <button
               onClick={handleClearSelection}
               className="text-xs text-blue-600 dark:text-blue-400 underline hover:text-blue-800 dark:hover:text-blue-200"
             >
               Clear selection
             </button>
           </div>
-          <button 
-            onClick={handleExportSelected}
-            className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 transition-colors"
-            disabled={selectedCount === 0}
-          >
-            Export
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExportNotionSelected}
+              className="px-3 py-1.5 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 text-sm rounded hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+              disabled={selectedCount === 0}
+            >
+              Export to Notion
+            </button>
+            <button
+              onClick={handleExportSelected}
+              className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 transition-colors"
+              disabled={selectedCount === 0}
+            >
+              Export
+            </button>
+          </div>
         </div>
       </div>
+
+      {oauthError && (
+        <div className="mt-2 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-2 text-sm text-red-700 dark:text-red-300 flex justify-between items-center">
+          Failed to connect to Notion. Please try again.
+          <button onClick={() => setOauthError(false)} className="text-xs underline">Dismiss</button>
+        </div>
+      )}
 
       <ExportOptionsModal
         isOpen={isModalOpen}
@@ -142,6 +216,15 @@ export function ExportActionBar({
         onConfirm={handleExportConfirm}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {notionModal && (
+        <NotionBulkExportModal
+          books={notionModal.books}
+          scope={notionModal.scope}
+          resumedAfterConnect={notionModal.resumedAfterConnect}
+          onClose={() => setNotionModal(null)}
+        />
+      )}
     </>
   )
 }
