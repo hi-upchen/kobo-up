@@ -582,7 +582,7 @@ export default function LandingPage() {
               Your reading insights are valuable. The thoughts you capture while reading shape who you become. Don't let technical barriers keep you from accessing your own intellectual property.
             </Text>
             <Text className="mt-4 text-base text-gray-600">
-              Join thousands of readers who've already liberated their Kobo highlights. No credit card. No account. No risk.
+              Liberate your Kobo highlights in the next ten seconds. No credit card. No account. No risk.
             </Text>
             
             <div className="mt-10 flex items-center justify-center gap-x-6">
