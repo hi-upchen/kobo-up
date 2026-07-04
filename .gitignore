@@ -38,6 +38,12 @@ next-env.d.ts
 
 play/
 
+# Transient SQLite WAL/journal files left behind by opening the committed
+# demo database with the sqlite3 CLI for inspection — never part of the
+# shipped artifact itself.
+public/demo/*.sqlite-shm
+public/demo/*.sqlite-wal
+
 # AI workflow artifacts
 docs/superpowers/plans/
 docs/superpowers/reports/

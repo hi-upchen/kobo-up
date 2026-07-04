@@ -1,3 +1,13 @@
+/**
+ * Which flow produced a loaded Kobo database, reported as the `method`
+ * field on the `kobodb_loaded` analytics event so GA4 can break down the
+ * activation funnel by entry point. `'demo'` is the no-signup sample
+ * library (see `KoboService.fetchDemoFile`); the others cover real
+ * uploads (`'folder_picker'`, `'file_upload'`) and the returning-user path
+ * that re-parses an already-stored database (`'stored'`).
+ */
+export type KoboDbLoadMethod = 'folder_picker' | 'file_upload' | 'stored' | 'demo'
+
 export interface IBook {
   contentId: string
   title?: string
