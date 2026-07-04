@@ -204,6 +204,25 @@ export default function LandingPage() {
 
     try {
       const file = await KoboService.fetchDemoFile()
+
+      // Seed the demo's handwritten annotation into IndexedDB so the sample
+      // library showcases the handwriting feature, mirroring processKoboFiles.
+      // Entirely best-effort: this whole block (clearing prior markups,
+      // fetching the demo assets, storing them) is wrapped so that any
+      // failure — missing assets, or a browser with IndexedDB unavailable —
+      // logs and is swallowed rather than aborting the demo. The notes page
+      // renders everything else and shows a graceful "Handwriting data not
+      // available" placeholder if the markup never made it into IndexedDB.
+      try {
+        const { clearMarkupFiles, saveMarkupFiles } = await import('@/services/markupService')
+        // Clear first so a prior real session's markups can't bleed into the demo.
+        await clearMarkupFiles()
+        const markupFiles = await KoboService.fetchDemoMarkupFiles()
+        await saveMarkupFiles(markupFiles)
+      } catch (markupError) {
+        ErrorService.logError(markupError as Error)
+      }
+
       await handleDatabaseSelect(file, 'demo')
     } catch (error) {
       const errorMessage = ErrorService.getErrorMessage(error as Error)

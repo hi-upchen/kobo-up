@@ -67,7 +67,14 @@ const BOOK_PLAN = [
         text: "It's no use going back to yesterday, because I was a different person then.",
         annotation: 'This one hit different during a rough week — impermanence, but make it Wonderland.'
       }
-    ]
+    ],
+    // Handwritten annotation ("markup") — a Bookmark row with Type='markup'
+    // and no text, whose BookmarkID keys the paired SVG+JPG assets shipped at
+    // public/demo/markups/<bookmarkId>.{svg,jpg}. This exists so the sample
+    // library actually demonstrates the handwriting feature the landing page
+    // advertises. The literal must equal DEMO_MARKUP_BOOKMARK_ID in
+    // src/constants/demoConstants.ts (this script can't import the .ts).
+    markups: [{ bookmarkId: 'demo-markup-alice-1' }]
   },
   {
     sourceContentId: '49dc2dd8-7711-4a02-aa02-7db61d3fe1b1',
@@ -279,6 +286,28 @@ function buildBookmarkTable(db, chapterIdByBook) {
         row.annotation ? 'note' : 'highlight'
       ])
     })
+
+    // Handwritten annotations render from a Bookmark row with Type='markup'
+    // and empty Text (the app's query includes it via `OR T.Type='markup'`);
+    // the actual strokes/page come from the paired IndexedDB assets keyed by
+    // BookmarkID. Anchored at `span#kobo.0.1` so it sorts to the top of the
+    // chapter, matching the app's "handwriting before text on the same page".
+    for (const markup of book.markups ?? []) {
+      insert.run([
+        markup.bookmarkId,
+        book.sourceContentId,
+        chapterContentId,
+        'span#kobo.0.1',
+        0,
+        'span#kobo.0.1',
+        0,
+        '',
+        null,
+        '2024-06-15T09:30:00.000',
+        0.01,
+        'markup'
+      ])
+    }
   }
   insert.free()
 }

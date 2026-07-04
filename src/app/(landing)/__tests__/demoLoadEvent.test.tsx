@@ -29,8 +29,17 @@ jest.mock('@/services/koboService', () => ({
     consumeLoadedTransition: jest.fn(),
     getBookCount: jest.fn(),
     fetchDemoFile: jest.fn(),
+    fetchDemoMarkupFiles: jest.fn(),
     markAsDemoData: jest.fn(),
   },
+}))
+
+// Demo handwriting is seeded into IndexedDB as a best-effort side step of the
+// demo flow; stub the IndexedDB-backed store so this test (which is about the
+// kobodb_loaded event, not markup persistence) doesn't touch real IndexedDB.
+jest.mock('@/services/markupService', () => ({
+  clearMarkupFiles: jest.fn().mockResolvedValue(undefined),
+  saveMarkupFiles: jest.fn().mockResolvedValue(undefined),
 }))
 
 describe('LandingPage demo mode', () => {
@@ -42,6 +51,7 @@ describe('LandingPage demo mode', () => {
     ;(KoboService.hasStoredData as jest.Mock).mockResolvedValue(false)
     ;(KoboService.consumeLoadedTransition as jest.Mock).mockReturnValue(true)
     ;(KoboService.getBookCount as jest.Mock).mockResolvedValue(4)
+    ;(KoboService.fetchDemoMarkupFiles as jest.Mock).mockResolvedValue([])
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)

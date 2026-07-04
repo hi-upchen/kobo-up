@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1264" height="1680" viewBox="0 0 1264 1680"
+ xmlns="http://www.w3.org/2000/svg" version="1.1">
+<g fill="none" stroke="#173e78" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.92">
+
+  <!-- Left-margin bracket around the opening passage -->
+  <path d="M120,262 q -12,3 -10,20 L110,702 q -2,18 12,22" />
+  <path d="M120,262 q 16,-7 34,-4" />
+  <path d="M110,724 q 18,6 34,1" />
+
+  <!-- Wavy underline beneath 'without pictures or conversations?' -->
+  <path d="M150,745 q 105,-12 205,-2 q 100,10 205,-1 q 110,-11 208,3" />
+
+  <!-- Star doodle in the right margin (single stylus stroke) -->
+  <path d="M852,668 L874,731 L820,692 L886,692 L832,731 Z" />
+
+  <!-- Emphatic exclamation next to the star -->
+  <path d="M928,676 q 3,26 6,44" />
+  <circle cx="936" cy="734" r="4.5" fill="#173e78" stroke="none" />
+
+</g>
+</svg>

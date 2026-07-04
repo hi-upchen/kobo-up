@@ -18,10 +18,13 @@
 import fs from 'fs'
 import path from 'path'
 import { KoboService } from '../koboService'
+import { DEMO_MARKUP_BOOKMARK_ID } from '../../constants/demoConstants'
 
 jest.mock('../../models/KoboDB')
 
 const DEMO_DB_PATH = path.resolve(__dirname, '../../../public/demo/KoboReader-demo.sqlite')
+const DEMO_MARKUP_SVG = path.resolve(__dirname, `../../../public/demo/markups/${DEMO_MARKUP_BOOKMARK_ID}.svg`)
+const DEMO_MARKUP_JPG = path.resolve(__dirname, `../../../public/demo/markups/${DEMO_MARKUP_BOOKMARK_ID}.jpg`)
 
 /** Reads a jsdom `Blob`/`File` into a Node `Buffer` via `FileReader` (jsdom lacks `Blob.arrayBuffer()`). */
 function readFileAsBuffer(file: Blob): Promise<Buffer> {
@@ -77,6 +80,52 @@ describe('KoboService demo mode', () => {
       global.fetch = jest.fn().mockRejectedValue(new Error('network down'))
 
       await expect(KoboService.fetchDemoFile()).rejects.toThrow(/sample library/i)
+    })
+  })
+
+  describe('fetchDemoMarkupFiles', () => {
+    /** Mocks `fetch` to serve the real shipped SVG/JPG bytes, keyed by URL. */
+    function mockMarkupFetch() {
+      const svgBytes = fs.readFileSync(DEMO_MARKUP_SVG)
+      const jpgBytes = fs.readFileSync(DEMO_MARKUP_JPG)
+      global.fetch = jest.fn().mockImplementation((url: string) => {
+        const bytes = url.endsWith('.svg') ? svgBytes : jpgBytes
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          arrayBuffer: () =>
+            Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)),
+        } as unknown as Response)
+      })
+      return { svgBytes, jpgBytes }
+    }
+
+    it('returns the paired SVG/JPG assets keyed by the shared markup bookmark id', async () => {
+      const { svgBytes, jpgBytes } = mockMarkupFetch()
+
+      const files = await KoboService.fetchDemoMarkupFiles()
+
+      expect(files).toHaveLength(1)
+      expect(files[0].bookmarkId).toBe(DEMO_MARKUP_BOOKMARK_ID)
+      // The SVG really is the transparent stroke overlay, the JPG really is
+      // the JPEG page background — confirm by byte length and format magic.
+      expect(Buffer.from(files[0].svg).equals(svgBytes)).toBe(true)
+      expect(Buffer.from(files[0].jpg).equals(jpgBytes)).toBe(true)
+      expect(Buffer.from(files[0].svg).toString('utf-8')).toContain('<svg')
+      // JPEG files start with the bytes FF D8 FF.
+      expect(Array.from(Buffer.from(files[0].jpg).subarray(0, 3))).toEqual([0xff, 0xd8, 0xff])
+    })
+
+    it('throws a KoboError when a markup asset fetch is not ok', async () => {
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 404 } as unknown as Response)
+
+      await expect(KoboService.fetchDemoMarkupFiles()).rejects.toThrow(/handwriting/i)
+    })
+
+    it('throws a KoboError when fetch itself rejects (e.g. offline)', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new Error('network down'))
+
+      await expect(KoboService.fetchDemoMarkupFiles()).rejects.toThrow(/handwriting/i)
     })
   })
 
