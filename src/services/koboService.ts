@@ -84,7 +84,10 @@ export class KoboService {
         )
       }
 
-      this.database = db
+      // Swap in the freshly parsed database, closing whatever was
+      // previously loaded (e.g. from an earlier session) so its WASM
+      // memory is freed instead of leaking.
+      this.setDatabase(db)
 
       // Store database data using the original IndexedDB approach
       // Convert File to ArrayBuffer and store in IndexedDB
@@ -101,9 +104,34 @@ export class KoboService {
   }
 
   /**
-   * Initialize database from stored IndexedDB data
+   * Initialize database from stored IndexedDB data, reusing the in-memory
+   * parsed instance across navigations within the same browser session.
+   *
+   * `/books` and `/book/[contentId]/notes` both call this on every mount to
+   * make sure a database is available. Previously this unconditionally
+   * re-read the full SQLite blob from IndexedDB and re-parsed it with
+   * sql.js/WASM every single time — including immediately after a fresh
+   * upload navigates to `/books`, and again on every later visit back to
+   * `/books` in the same session. For a large Kobo library that WASM parse
+   * is the single most expensive operation the app performs client-side.
+   *
+   * Since `this.database` already lives for the lifetime of the page's JS
+   * execution context (it only resets on a full page reload, or when
+   * explicitly cleared/replaced — see `clearStoredData()` and
+   * `setDatabase()`), it is safe to treat a non-null value as "already
+   * loaded this session" and skip the IndexedDB read and parse entirely.
+   *
+   * @returns Resolves once a database is available in memory — either the
+   *   cached instance from an earlier call, or a freshly parsed one.
+   * @throws {KoboError} If no stored data exists or parsing fails.
    */
   static async initializeFromStoredData(): Promise<void> {
+    if (this.database) {
+      // Already parsed this session; reuse it instead of re-reading and
+      // re-parsing the same SQLite file.
+      return
+    }
+
     try {
       const storedArrayBuffer = await this.getFromIndexedDB()
       if (!storedArrayBuffer) {
@@ -120,7 +148,7 @@ export class KoboService {
       // Initialize database
       const db = await connKoboDB(file)
 
-      this.database = db
+      this.setDatabase(db)
 
     } catch (error) {
       throw ErrorService.handleDatabaseError(error as Error, 'loading')
@@ -291,10 +319,26 @@ export class KoboService {
    * Close the database connection
    */
   static closeDatabase(): void {
-    if (this.database) {
+    this.setDatabase(null)
+  }
+
+  /**
+   * Replaces the in-memory database instance, closing whatever was
+   * previously assigned first (unless it's the exact same instance already
+   * in place). This is the single place allowed to call `db.close()` or
+   * assign `this.database`, so the cache can never end up double-closing
+   * the same instance — the same bug class fixed in `hasStoredData()`
+   * (commit 75196db), where a single WASM database could receive `close()`
+   * twice from two different code paths racing to finish.
+   *
+   * @param db - The database to make active, or `null` to clear the cache
+   *   (used by `closeDatabase()` / `clearStoredData()`).
+   */
+  private static setDatabase(db: Database | null): void {
+    if (this.database && this.database !== db) {
       this.database.close()
-      this.database = null
     }
+    this.database = db
   }
 
   /**
