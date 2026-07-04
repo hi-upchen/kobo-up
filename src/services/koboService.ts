@@ -1,6 +1,12 @@
 import { APP_CONSTANTS } from '../constants/appConstants'
 import type { IBook, INote, IHighlight, IBookHighlightNAnnotation, IBookChapter } from '../types/kobo'
-import { DEMO_DATABASE_PATH } from '../constants/demoConstants'
+import {
+  DEMO_DATABASE_PATH,
+  DEMO_MARKUP_BOOKMARK_ID,
+  DEMO_MARKUP_SVG_PATH,
+  DEMO_MARKUP_JPG_PATH
+} from '../constants/demoConstants'
+import type { MarkupFile } from './markupService'
 import { ErrorService } from './errorService'
 import {
   connKoboDB,
@@ -524,6 +530,47 @@ export class KoboService {
 
     const blob = await response.blob()
     return new File([blob], 'KoboReader-demo.sqlite', { type: 'application/x-sqlite3' })
+  }
+
+  /**
+   * Fetches the demo's handwritten-annotation assets — the transparent stroke
+   * overlay (SVG) and the page background it was drawn over (JPG) — shipped
+   * under `public/demo/markups/`, and returns them shaped as a `MarkupFile`
+   * ready to hand to `saveMarkupFiles()`. This is what lets the sample library
+   * actually demonstrate the handwriting feature: the returned `bookmarkId`
+   * matches the `Type='markup'` row in the demo database, so the notes page
+   * pairs them up and renders them through `MarkupViewer`.
+   *
+   * @returns A single-element array with the demo markup's paired SVG/JPG buffers.
+   * @throws {KoboError} If either asset can't be fetched (e.g. offline, deploy misconfiguration).
+   */
+  static async fetchDemoMarkupFiles(): Promise<MarkupFile[]> {
+    let svgResponse: Response
+    let jpgResponse: Response
+    try {
+      ;[svgResponse, jpgResponse] = await Promise.all([
+        fetch(DEMO_MARKUP_SVG_PATH),
+        fetch(DEMO_MARKUP_JPG_PATH)
+      ])
+    } catch (error) {
+      throw ErrorService.handleFileError(
+        'Could not load the sample handwriting annotation.',
+        { originalError: (error as Error).message }
+      )
+    }
+
+    if (!svgResponse.ok || !jpgResponse.ok) {
+      throw ErrorService.handleFileError(
+        `Could not load the sample handwriting annotation (server returned ${svgResponse.status}/${jpgResponse.status}).`
+      )
+    }
+
+    const [svg, jpg] = await Promise.all([
+      svgResponse.arrayBuffer(),
+      jpgResponse.arrayBuffer()
+    ])
+
+    return [{ bookmarkId: DEMO_MARKUP_BOOKMARK_ID, svg, jpg }]
   }
 
   /**

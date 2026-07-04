@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 import initSqlJs from 'sql.js'
 import { checkIsKoboDB, getBookList, getChaptersWithNotes } from '@/models/KoboDB'
+import { DEMO_MARKUP_BOOKMARK_ID } from '@/constants/demoConstants'
 
 const DEMO_DB_PATH = path.resolve(__dirname, '../../../public/demo/KoboReader-demo.sqlite')
 
@@ -80,5 +81,23 @@ describe('demo database (public/demo/KoboReader-demo.sqlite integration)', () =>
     expect(noteWithAnnotation?.annotation).toBe(
       'This one hit different during a rough week — impermanence, but make it Wonderland.'
     )
+  })
+
+  it('includes a handwritten markup annotation for Alice, keyed to the shipped assets', async () => {
+    const books = await getBookList(db)
+    const alice = books.find(b => b.bookTitle === "Alice's Adventures in Wonderland")
+    expect(alice).toBeDefined()
+
+    const chapters = await getChaptersWithNotes(db, alice!.contentId)
+    const markupNotes = chapters
+      .flatMap(chapter => chapter.notes)
+      .filter(note => note.type === 'markup')
+
+    // Exactly one markup, whose bookmarkId matches the SVG/JPG filenames under
+    // public/demo/markups/ and the IndexedDB key the notes page reads it by.
+    expect(markupNotes).toHaveLength(1)
+    expect(markupNotes[0].bookmarkId).toBe(DEMO_MARKUP_BOOKMARK_ID)
+    // Markup rows carry no text — the annotation lives in the paired image.
+    expect(markupNotes[0].text ?? '').toBe('')
   })
 })
