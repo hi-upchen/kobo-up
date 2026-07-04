@@ -80,6 +80,34 @@ describe('BulkExportProgressList', () => {
     expect(exportingRow?.textContent).toContain('Uploading images')
   })
 
+  it('shows a numeric counter next to the stage when stageTotal is greater than 1', () => {
+    const withCounter: BulkExportBookStatus[] = [
+      { contentId: 'a', bookTitle: 'Book A', state: 'exporting', stage: 'Uploading images', stageCurrent: 5, stageTotal: 20 },
+    ]
+
+    act(() => {
+      root.render(<BulkExportProgressList books={withCounter} settledCount={0} total={1} />)
+    })
+
+    const row = container.querySelector('li')
+    expect(row?.textContent).toContain('Uploading images')
+    expect(row?.textContent).toContain('5/20')
+  })
+
+  it('hides the counter for a single-item stage (stageTotal <= 1)', () => {
+    const singleItemStage: BulkExportBookStatus[] = [
+      { contentId: 'a', bookTitle: 'Book A', state: 'exporting', stage: 'Sending to Notion...', stageCurrent: 0, stageTotal: 1 },
+    ]
+
+    act(() => {
+      root.render(<BulkExportProgressList books={singleItemStage} settledCount={0} total={1} />)
+    })
+
+    const row = container.querySelector('li')
+    expect(row?.textContent).toContain('Sending to Notion...')
+    expect(row?.textContent).not.toMatch(/\d+\/\d+/)
+  })
+
   it('caps the displayed "current book" number at the total once everything has settled', () => {
     const allSettled: BulkExportBookStatus[] = [
       { contentId: 'a', bookTitle: 'Book A', state: 'success' },

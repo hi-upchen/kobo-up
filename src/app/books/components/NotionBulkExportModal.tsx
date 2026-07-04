@@ -168,8 +168,12 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
             prev.map((s) => (s.contentId === book.contentId ? { ...s, state: 'exporting' } : s))
           )
         },
-        onBookProgress: (book, stage) => {
-          setBookStatuses((prev) => (prev.map((s) => (s.contentId === book.contentId ? { ...s, stage } : s))))
+        onBookProgress: (book, stage, current, total) => {
+          setBookStatuses((prev) =>
+            prev.map((s) =>
+              s.contentId === book.contentId ? { ...s, stage, stageCurrent: current, stageTotal: total } : s
+            )
+          )
         },
         onBookSettled: (outcome) => {
           setSettledCount((c) => c + 1)
