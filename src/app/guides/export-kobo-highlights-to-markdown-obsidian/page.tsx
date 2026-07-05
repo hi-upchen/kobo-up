@@ -214,6 +214,11 @@ export default function ExportKoboHighlightsToMarkdownObsidianGuide() {
             Export Kobo highlights to Notion
           </TextLink>
         </li>
+        <li>
+          <TextLink href="/guides/export-kobo-handwritten-notes">
+            Export Kobo handwritten notes (stylus)
+          </TextLink>
+        </li>
       </ul>
 
       <Text className="mt-8">

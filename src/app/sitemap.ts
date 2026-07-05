@@ -10,6 +10,7 @@ const GUIDE_SLUGS = [
   'kobo-export-not-working',
   'export-kobo-highlights-to-notion',
   'export-kobo-highlights-to-markdown-obsidian',
+  'export-kobo-handwritten-notes',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
