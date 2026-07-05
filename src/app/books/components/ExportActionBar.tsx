@@ -5,6 +5,8 @@ import type { IBook } from '@/types/kobo'
 import { ExportOptionsModal, type ExportFormat, type ExportStructure } from './ExportOptionsModal'
 import { ExportService } from '@/services/exportService'
 import { pushToDataLayer } from '@/utils/gtm'
+import { DonationCard } from '@/components/DonationCard'
+import { Dialog, DialogTitle, DialogDescription, DialogBody, DialogActions } from '@/components/dialog'
 import { NotionBulkExportModal } from './NotionBulkExportModal'
 import { NotionOAuthReturnHandler } from './NotionOAuthReturnHandler'
 import type { BulkExportScope } from './notionBulkExportSelection'
@@ -33,6 +35,8 @@ export function ExportActionBar({
   const [exportMode, setExportMode] = useState<'all' | 'selected'>('all')
   const [notionModal, setNotionModal] = useState<NotionModalState | null>(null)
   const [oauthError, setOauthError] = useState(false)
+  /** Number of books in the just-completed file export; non-null shows the success confirmation. */
+  const [fileExportSuccessCount, setFileExportSuccessCount] = useState<number | null>(null)
 
   // Books with content (notes or highlights)
   const booksWithContent = books.filter(book =>
@@ -62,6 +66,11 @@ export function ExportActionBar({
    * downstream in GA4; failures (caught below) are not counted as
    * completions.
    *
+   * On success, closes the options modal and opens a small success
+   * confirmation (previously the flow closed silently, leaving no signal the
+   * download had worked). That confirmation carries the delivered-value
+   * donation ask, so the ask fires only after the file is actually in hand.
+   *
    * @param format - Requested export format from the options modal (`'markdown'` or `'txt'`).
    * @param structure - Whether to export as a `'zip'` of separate files or a single `'combined'` file.
    */
@@ -86,12 +95,13 @@ export function ExportActionBar({
         structure,
         scope: exportMode === 'all' ? 'all_books' : 'selected_books',
       })
+      setIsModalOpen(false)
+      setFileExportSuccessCount(booksToExport.length)
     } catch (error) {
       console.error('Export failed:', error)
-      // You could add error handling UI here if needed
+      // Leave the options modal open so the user can retry; no success
+      // confirmation or completion event is emitted for a failed export.
     }
-
-    setIsModalOpen(false)
   }
 
   const handleClearSelection = () => {
@@ -224,6 +234,27 @@ export function ExportActionBar({
           resumedAfterConnect={notionModal.resumedAfterConnect}
           onClose={() => setNotionModal(null)}
         />
+      )}
+
+      {fileExportSuccessCount !== null && (
+        <Dialog size="sm" open onClose={() => setFileExportSuccessCount(null)}>
+          <DialogTitle>Export complete</DialogTitle>
+          <DialogDescription>
+            Your export of {fileExportSuccessCount} book{fileExportSuccessCount !== 1 ? 's' : ''} has downloaded.
+          </DialogDescription>
+          <DialogBody>
+            <DonationCard variant="compact" placement="donation_card_bulk_file_success" />
+          </DialogBody>
+          <DialogActions>
+            <button
+              type="button"
+              onClick={() => setFileExportSuccessCount(null)}
+              className="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 transition-colors"
+            >
+              Close
+            </button>
+          </DialogActions>
+        </Dialog>
       )}
     </>
   )
