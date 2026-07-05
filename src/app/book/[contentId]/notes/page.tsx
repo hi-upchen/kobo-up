@@ -12,6 +12,7 @@ import { KoboService } from '@/services/koboService';
 import { exportBookToNotion, fetchNotionPages, NotionPage, NotionReauthRequiredError } from '@/services/notionExportService';
 import { pushToDataLayer } from '@/utils/gtm';
 
+import { DonationCard } from '@/components/DonationCard'
 import { NotesHeader } from './components/NotesHeader'
 import { NotesSection } from './components/NotesSection'
 import { generateMarkdownContent, downloadMarkdownFile } from '@/utils/markdownGenerator'
@@ -53,6 +54,11 @@ function NotesPageContent() {
   const [pageSearch, setPageSearch] = useState('');
 
   const hasHandledRedirect = useRef(false);
+
+  /** True once the post-export donation prompt is visible below. */
+  const [showPostExportDonation, setShowPostExportDonation] = useState(false);
+  /** Latches after the first successful file export so repeated exports don't re-stack the prompt this page visit. */
+  const postExportDonationShownRef = useRef(false);
 
   useEffect(() => {
     const loadBookData = async () => {
@@ -184,9 +190,21 @@ function NotesPageContent() {
   };
 
   /**
+   * Reveals the delivered-value donation prompt after a successful single-book
+   * file download, but only the first time per page visit — the ref latch keeps
+   * repeated Markdown/text exports from stacking multiple prompts.
+   */
+  const maybeShowPostExportDonation = () => {
+    if (postExportDonationShownRef.current) return;
+    postExportDonationShownRef.current = true;
+    setShowPostExportDonation(true);
+  };
+
+  /**
    * Generates and downloads a single book's notes/highlights as a Markdown
    * file, then records an `export_complete` funnel event so the
-   * export-to-donation conversion rate can be measured downstream in GA4.
+   * export-to-donation conversion rate can be measured downstream in GA4, and
+   * surfaces the delivered-value donation prompt.
    *
    * @param book - The book whose notes are being exported.
    * @param chapters - The book's chapters with their attached notes/highlights.
@@ -195,6 +213,7 @@ function NotesPageContent() {
     const content = generateMarkdownContent(book, chapters);
     downloadMarkdownFile(`${book.bookTitle}.md`, content);
     pushToDataLayer({ event: 'export_complete', format: 'markdown', scope: 'single_book' });
+    maybeShowPostExportDonation();
   };
 
   /**
@@ -210,6 +229,7 @@ function NotesPageContent() {
     const content = generateTextContent(book, chapters);
     downloadTextFile(`${book.bookTitle}.txt`, content);
     pushToDataLayer({ event: 'export_complete', format: 'txt', scope: 'single_book' });
+    maybeShowPostExportDonation();
   };
 
   const handleExportNotion = useCallback(async (book: IBook, chapters: IBookChapter[]) => {
@@ -302,6 +322,15 @@ function NotesPageContent() {
   };
 
   const dismissToast = () => setToast(null);
+
+  /**
+   * Records a `donate_click` for the small support link shown inside the
+   * successful-Notion-export toast. Fires only the dataLayer push; the link
+   * keeps its default `target="_blank"` navigation to Buy Me a Coffee.
+   */
+  const handleNotionToastDonateClick = () => {
+    pushToDataLayer({ event: 'donate_click', placement: 'donation_card_notion_toast' });
+  };
 
   return (
     <div>
@@ -401,6 +430,21 @@ function NotesPageContent() {
                   Open in Notion
                 </a>
               )}
+              {/* Delivered-value donation ask on the Notion success toast. Kept
+                  visually secondary to the "Open in Notion" link above (plain
+                  underlined text vs. a filled button) so the user's exported
+                  page stays the primary action. */}
+              {toast.type === 'success' && toast.notionUrl && (
+                <a
+                  href="https://buymeacoffee.com/hi.upchen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleNotionToastDonateClick}
+                  className="mt-1 text-xs text-white/80 underline hover:text-white transition"
+                >
+                  ☕ Support this tool
+                </a>
+              )}
               {toast.action && (
                 <button
                   onClick={toast.action.onClick}
@@ -418,6 +462,28 @@ function NotesPageContent() {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delivered-value donation prompt, shown after a successful Markdown/text
+          download. A dismissible bottom panel (not a modal) so it never blocks
+          the notes the user just came to read. Shown at most once per visit —
+          see maybeShowPostExportDonation. */}
+      {showPostExportDonation && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4">
+          <div className="relative rounded-lg bg-white dark:bg-zinc-800 shadow-2xl border border-gray-200 dark:border-zinc-700">
+            <button
+              type="button"
+              aria-label="Dismiss"
+              onClick={() => setShowPostExportDonation(false)}
+              className="absolute top-2 right-2 z-10 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <DonationCard variant="compact" placement="donation_card_post_export_notes" />
           </div>
         </div>
       )}

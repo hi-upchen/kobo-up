@@ -27,6 +27,7 @@ import {
 } from '@/services/notionExportService'
 import { runBulkNotionExport, type BulkExportSummary } from '@/services/notionBulkExportService'
 import { pushToDataLayer } from '@/utils/gtm'
+import { DonationCard } from '@/components/DonationCard'
 import { NotionPagePicker } from '@/components/NotionPagePicker'
 import { Dialog, DialogTitle, DialogDescription, DialogBody, DialogActions } from '@/components/dialog'
 import { BulkExportProgressList, type BulkExportBookStatus } from './BulkExportProgressList'
@@ -320,6 +321,13 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
                     </li>
                   ))}
                 </ul>
+              )}
+              {/* Ask for support only once value has actually been delivered:
+                  at least one book made it into Notion this run. Placement-tagged
+                  so this delivered-value ask can be measured against the older
+                  before-value asks in the GA4 placement breakdown. */}
+              {successCount > 0 && (
+                <DonationCard variant="compact" placement="donation_card_bulk_notion_summary" />
               )}
             </DialogBody>
             <DialogActions>

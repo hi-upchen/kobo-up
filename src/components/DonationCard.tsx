@@ -1,21 +1,58 @@
 /**
- * Reusable Buy Me a Coffee donation prompt, rendered inline at fixed points
- * in the books list and the notes/highlights view. Every render site is
- * tracked separately (via the required `placement` prop) so the donation
- * funnel can be broken down by which touchpoint drove the click.
+ * Reusable Buy Me a Coffee donation prompt. Rendered inline at fixed points
+ * in the books list and the notes/highlights view (the `default` variant), and
+ * — after Growth Loop 2 — at the moment a user actually receives exported value
+ * (the `compact` variant, sized to sit inside an export-success Dialog or
+ * toast). Every render site is tracked separately via the required `placement`
+ * prop so the donation funnel can be broken down by which touchpoint drove the
+ * click.
+ *
+ * Honest-copy contract: KoboUp is free, open-source, fully client-side, and
+ * built/maintained by one person. This card only ever makes those true claims —
+ * no supporter counts, urgency, or implication that any feature is gated behind
+ * a donation.
  */
 import { Text } from '@/components/text'
 import { pushToDataLayer } from '@/utils/gtm'
 
-/** Identifies which page-level touchpoint rendered this donation card. */
-export type DonationCardPlacement = 'donation_card_books' | 'donation_card_notes'
+/**
+ * Identifies which touchpoint rendered this donation card. The first two values
+ * are the pre-existing inline placements and act as the control group in the
+ * placement breakdown, so their events/copy must not change. The remaining four
+ * were added to put the ask at the moment exported value is delivered.
+ */
+export type DonationCardPlacement =
+  | 'donation_card_books'
+  | 'donation_card_notes'
+  | 'donation_card_bulk_notion_summary'
+  | 'donation_card_bulk_file_success'
+  | 'donation_card_post_export_notes'
+  | 'donation_card_notion_toast'
+
+/**
+ * Visual density of the card. `default` is the original full-size inline card;
+ * `compact` uses tighter padding and smaller text so it reads well inside a
+ * Dialog body or a success confirmation panel.
+ */
+export type DonationCardVariant = 'default' | 'compact'
 
 interface DonationCardProps {
   /** Where this card is rendered; recorded on the `donate_click` GTM event. */
   placement: DonationCardPlacement
+  /** Visual density; defaults to the original full-size card. */
+  variant?: DonationCardVariant
 }
 
-export function DonationCard({ placement }: DonationCardProps) {
+/** Shared Buy Me a Coffee cup glyph used by both variants' link buttons. */
+function CoffeeCupIcon({ className }: { className?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" className={className}>
+      <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z" />
+    </svg>
+  )
+}
+
+export function DonationCard({ placement, variant = 'default' }: DonationCardProps) {
   /**
    * Records a `donate_click` event before the browser follows the Buy Me a
    * Coffee link. The link keeps its default `target="_blank"` navigation —
@@ -23,6 +60,31 @@ export function DonationCard({ placement }: DonationCardProps) {
    */
   const handleDonateClick = () => {
     pushToDataLayer({ event: 'donate_click', placement })
+  }
+
+  if (variant === 'compact') {
+    return (
+      <div className="bg-indigo-50 dark:bg-indigo-800/30 p-4 rounded-lg my-3">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {/* Plain <p> (not the shared Text component) so the smaller size is
+              not overridden by Text's default text-base/7. */}
+          <p className="text-sm text-zinc-700 dark:text-zinc-300 text-balance">
+            KoboUp is free and open-source, built by one person. If it just saved
+            you time, you can buy me a coffee. ☕
+          </p>
+          <a
+            href="https://buymeacoffee.com/hi.upchen"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleDonateClick}
+            className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black rounded-lg font-bold transition-all hover:scale-105 text-xs"
+          >
+            <CoffeeCupIcon className="animate-bounce" />
+            Buy me a coffee
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -43,9 +105,7 @@ export function DonationCard({ placement }: DonationCardProps) {
           onClick={handleDonateClick}
           className="inline-flex items-center gap-2 px-4 py-2 bg-[#FFDD00] hover:bg-[#FFDD00]/90 text-black rounded-lg font-bold transition-all hover:scale-105 text-sm"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" className="animate-bounce">
-            <path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z" />
-          </svg>
+          <CoffeeCupIcon className="animate-bounce" />
           Help Keep This Tool Running
         </a>
       </div>
