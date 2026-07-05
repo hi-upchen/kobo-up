@@ -96,8 +96,9 @@ const Footer = () => {
   return (
     <>
       {/* Guides link section: surfaces the SEO guide pages (troubleshooting,
-          Notion export, Markdown/Obsidian export) on every page so crawlers
-          and readers can reach them from anywhere on the site. */}
+          Notion export, Markdown/Obsidian export, handwritten/stylus export)
+          on every page so crawlers and readers can reach them from anywhere
+          on the site. */}
       <nav
         aria-label="Guides"
         className="flex flex-wrap justify-center gap-x-6 gap-y-1 px-2 pt-6 text-sm text-zinc-500 dark:text-zinc-400 mt-6 sm:mt-12 lg:mt-24"
@@ -119,6 +120,12 @@ const Footer = () => {
           className="hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
         >
           Export Kobo Highlights to Markdown/Obsidian
+        </NextLink>
+        <NextLink
+          href="/guides/export-kobo-handwritten-notes"
+          className="hover:text-zinc-950 dark:hover:text-zinc-50 transition underline"
+        >
+          Export Kobo Handwritten Notes (Stylus)
         </NextLink>
       </nav>
 

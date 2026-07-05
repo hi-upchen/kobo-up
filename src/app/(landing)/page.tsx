@@ -500,7 +500,10 @@ export default function LandingPage() {
               </div>
               <h3 className="mt-6 text-lg font-semibold text-gray-900 dark:text-gray-100">Stylus Handwriting Support</h3>
               <Text className="mt-2 text-sm leading-6">
-                Own a Kobo with stylus support? Your handwritten notes now appear right alongside text highlights—view full page screenshots with your ink strokes overlaid.
+                Own a Kobo with stylus support? Your handwritten notes now appear right alongside text highlights—view full page screenshots with your ink strokes overlaid.{' '}
+                <TextLink href="/guides/export-kobo-handwritten-notes">
+                  See how handwriting export works
+                </TextLink>.
               </Text>
             </div>
           </div>

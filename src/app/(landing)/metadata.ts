@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Kobo Export Not Working? Fixed - Kobo Note Up',
-  description: 'Fix broken Kobo export instantly. Works with sideloaded books when official export fails. Browser-based, private, no installation required.',
+  title: 'Export Kobo Highlights, Notes & Handwriting — Free, No Install | Kobo Note Up',
+  description: 'Export Kobo highlights, notes, and stylus handwriting — including sideloaded books the official export ignores. Send straight to Notion, Markdown, or plain text. Browser-based, private, no installation.',
   keywords: [
     'kobo export highlights',
     'kobo export notes',
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Kobo Export Not Working? Fixed - Kobo Note Up',
-    description: 'Fix broken Kobo export instantly. Works with sideloaded books when official export fails. Browser-based, private, no installation required.',
+    title: 'Export Kobo Highlights, Notes & Handwriting — Free, No Install | Kobo Note Up',
+    description: 'Export Kobo highlights, notes, and stylus handwriting — including sideloaded books the official export ignores. Send straight to Notion, Markdown, or plain text. Browser-based, private, no installation.',
     url: 'https://kobo-up.runawayup.com',
     siteName: 'Kobo Note Up',
     locale: 'en_US',
@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Kobo Export Not Working? Fixed - Kobo Note Up',
-    description: 'Fix broken Kobo export instantly. Works with sideloaded books when official export fails. Browser-based, private.',
+    title: 'Export Kobo Highlights, Notes & Handwriting — Free, No Install | Kobo Note Up',
+    description: 'Export Kobo highlights, notes, and stylus handwriting — including sideloaded books. Straight to Notion, Markdown, or text. Browser-based, private.',
     creator: '@kobonoteup',
   },
   robots: {
