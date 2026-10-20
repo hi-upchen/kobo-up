@@ -1,5 +1,6 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import { NextResponse } from 'next/server';
+import { errorMessage, redactSecrets, sendAlert } from '@/lib/alert';
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -27,15 +28,17 @@ export async function POST(request: Request): Promise<NextResponse> {
         // ⚠️ This will not work on `localhost` websites,
         // Use ngrok or similar to get the full upload flow
   
+        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' });
+
         try {
           const formData = new FormData();
           formData.append('from', `Kobo DB Upload <postmaster@${process.env.MAILGUN_SENDING_DOMAIN}>`);
           formData.append('to', process.env.INTERNAL_NOTIFICATION_EMAIL!);
           formData.append('subject', 'New Kobo DB Upload');
-          formData.append('text', `A new Kobo DB was uploaded:\n\nURL: ${blob.url}\nTimestamp: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' })}`);
+          formData.append('text', `A new Kobo DB was uploaded:\n\nURL: ${blob.url}\nTimestamp: ${timestamp}`);
 
           const auth = Buffer.from(`api:${process.env.MAILGUN_SENDING_API_KEY}`).toString('base64');
-          
+
           const response = await fetch(
             `https://api.mailgun.net/v3/${process.env.MAILGUN_SENDING_DOMAIN}/messages`,
             {
@@ -43,6 +46,7 @@ export async function POST(request: Request): Promise<NextResponse> {
               headers: {
                 'Authorization': `Basic ${auth}`,
               },
+              signal: AbortSignal.timeout(5_000),
               body: formData,
             }
           );
@@ -53,14 +57,34 @@ export async function POST(request: Request): Promise<NextResponse> {
         } catch (error) {
           console.error('Failed to send notification:', error);
           // Don't throw here to avoid affecting the upload response
+          await sendAlert({
+            key: 'mailgun-failed',
+            title: 'Mailgun 寄信失敗',
+            detail: errorMessage(error),
+            fix: '查 Mailgun 金鑰與網域設定',
+          });
         }
+
+        await sendAlert({
+          key: 'debug-upload',
+          title: '除錯資料庫上傳',
+          detail: `URL：${blob.url} · 時間（台北）：${timestamp}`,
+          fix: '不需處理，這只是通知',
+          throttleMs: 0,
+        });
       },
     });
  
     return NextResponse.json(jsonResponse);
   } catch (error) {
+    await sendAlert({
+      key: 'upload-failed',
+      title: '除錯資料庫上傳失敗',
+      detail: errorMessage(error),
+      fix: '查 Vercel Blob 設定與 BLOB_READ_WRITE_TOKEN',
+    });
     return NextResponse.json(
-      { error: (error as Error).message },
+      { error: redactSecrets(errorMessage(error)) },
       { status: 400 }, // The webhook will retry 5 times waiting for a 200
     );
   }

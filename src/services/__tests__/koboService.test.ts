@@ -1,9 +1,11 @@
 import { KoboService } from '../koboService'
 import { APP_CONSTANTS } from '../../constants/appConstants'
 import * as KoboDB from '../../models/KoboDB'
+import { reportLayoutError } from '../../utils/reportLayoutError'
 
 // Mock the KoboDB module
 jest.mock('../../models/KoboDB')
+jest.mock('../../utils/reportLayoutError')
 
 // Mock File constructor for testing
 const mockFile = (name: string, size: number = 1000) => ({
@@ -282,5 +284,68 @@ describe('KoboService', () => {
 
       expect(KoboService.consumeLoadedTransition()).toBe(true)
     })
+  })
+})
+describe('KoboService.initializeDatabase with an unfamiliar layout', () => {
+  const file = {
+    name: 'secret-book-club.sqlite',
+    size: 1000,
+    type: 'application/x-sqlite3',
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
+  } as unknown as File
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    ;(KoboDB.connKoboDB as jest.Mock).mockResolvedValue({ close: jest.fn() })
+    ;(KoboDB.checkIsKoboDB as jest.Mock).mockResolvedValue(false)
+  })
+
+  it('reports the DbVersion without the file name when the main tables are missing', async () => {
+    ;(KoboDB.getDbVersion as jest.Mock).mockReturnValue(176)
+
+    await expect(KoboService.initializeDatabase(file)).rejects.toThrow(
+      'This file does not contain a valid Kobo database structure. Please upload the KoboReader.sqlite file from your Kobo device.'
+    )
+
+    expect(reportLayoutError).toHaveBeenCalledTimes(1)
+    const [operation, message] = (reportLayoutError as jest.Mock).mock.calls[0]
+    expect(operation).toBe('initialization')
+    expect(message).toBe('content or Bookmark table missing, DbVersion 176')
+    expect(message).not.toContain(file.name)
+  })
+
+  it('does not report when the file has no DbVersion table', async () => {
+    ;(KoboDB.getDbVersion as jest.Mock).mockReturnValue(null)
+
+    await expect(KoboService.initializeDatabase(file)).rejects.toThrow('valid Kobo database structure')
+
+    expect(reportLayoutError).not.toHaveBeenCalled()
+  })
+})
+
+describe('KoboService book loaders with an unfamiliar layout', () => {
+  const missingColumn = new Error('no such column: T.Text')
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    ;(KoboService as { database: unknown }).database = {}
+  })
+
+  afterEach(() => {
+    ;(KoboService as { database: unknown }).database = null
+  })
+
+  it.each([
+    ['getBookCount', 'getBookList', () => KoboService.getBookCount(), null, 'book loading'],
+    ['loadBookDetails', 'getBook', () => KoboService.loadBookDetails('b1'), null, 'book loading'],
+    ['loadBookAnnotations', 'getHighlightNAnnotationList', () => KoboService.loadBookAnnotations('b1'), [], 'highlight loading'],
+    ['loadBookChaptersWithNotes', 'getChaptersWithNotes', () => KoboService.loadBookChaptersWithNotes('b1'), [], 'note loading'],
+  ])('%s returns its fallback and reports a layout error', async (_name, dbFn, call, fallback, operation) => {
+    ;(KoboDB as unknown as Record<string, jest.Mock>)[dbFn].mockRejectedValue(missingColumn)
+
+    await expect(call()).resolves.toEqual(fallback)
+
+    expect(reportLayoutError).toHaveBeenCalledTimes(1)
+    expect((reportLayoutError as jest.Mock).mock.calls[0][0]).toBe(operation)
   })
 })
