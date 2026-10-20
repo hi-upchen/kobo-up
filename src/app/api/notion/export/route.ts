@@ -3,6 +3,7 @@ import { Client } from '@notionhq/client'
 import type { BlockObjectRequest } from '@notionhq/client/build/src/api-endpoints'
 import { getNotionSession, clearNotionSession } from '@/lib/notion/session'
 import { isNotionAuthError, withNotionRateLimitRetry } from '@/lib/notion/retry'
+import { alertUnexpectedNotionError } from '@/lib/notion/alertUnexpected'
 import { buildBookPageBlocks } from '@/utils/notionBlockBuilder'
 import { IBookChapter } from '@/types/kobo'
 
@@ -237,6 +238,16 @@ export async function POST(request: NextRequest) {
         })
       } catch (err) {
         console.error('Notion export error:', err)
+
+        // Tell the owner about crashes that are not the user's doing. A client
+        // that left mid-export stays silent.
+        if (!aborted) {
+          await alertUnexpectedNotionError(err, {
+            key: 'notion-export-crash',
+            title: 'Notion 匯出失敗',
+            fix: '查 Vercel 紀錄 "Notion export error"',
+          })
+        }
 
         if (isNotionAuthError(err)) {
           // The token was valid enough to pass getNotionSession() but Notion

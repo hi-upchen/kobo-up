@@ -5,7 +5,7 @@
  * caller can clear the session and prompt reconnect instead of a dead end.
  */
 import { APIResponseError, APIErrorCode } from '@notionhq/client'
-import { withNotionRateLimitRetry, isNotionAuthError } from '../retry'
+import { withNotionRateLimitRetry, isNotionAuthError, isUserCausedNotionError } from '../retry'
 
 /**
  * Builds a real `APIResponseError` instance (not a plain object) because
@@ -75,5 +75,24 @@ describe('withNotionRateLimitRetry', () => {
 
     await expect(withNotionRateLimitRetry(fn)).rejects.toThrow(/unauthorized/)
     expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('isUserCausedNotionError', () => {
+  it.each([
+    APIErrorCode.Unauthorized,
+    APIErrorCode.RateLimited,
+    APIErrorCode.ObjectNotFound,
+    APIErrorCode.RestrictedResource,
+  ])('returns true for %s', (code) => {
+    expect(isUserCausedNotionError(makeApiError(code))).toBe(true)
+  })
+
+  it('returns false for an internal server error', () => {
+    expect(isUserCausedNotionError(makeApiError(APIErrorCode.InternalServerError))).toBe(false)
+  })
+
+  it('returns false for a plain Error', () => {
+    expect(isUserCausedNotionError(new Error('boom'))).toBe(false)
   })
 })

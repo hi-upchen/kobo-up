@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { getNotionSession, clearNotionSession } from '@/lib/notion/session'
 import { isNotionAuthError } from '@/lib/notion/retry'
+import { alertUnexpectedNotionError } from '@/lib/notion/alertUnexpected'
 
 interface NotionPage {
   id: string
@@ -58,6 +59,11 @@ export async function GET() {
       )
     }
     console.error('Notion pages search error:', err)
+    await alertUnexpectedNotionError(err, {
+      key: 'notion-pages-crash',
+      title: 'Notion 頁面搜尋失敗',
+      fix: '查 Vercel 紀錄 "Notion pages search error"',
+    })
     return NextResponse.json(
       { error: `Failed to fetch pages: ${err instanceof Error ? err.message : 'Unknown error'}` },
       { status: 500 }

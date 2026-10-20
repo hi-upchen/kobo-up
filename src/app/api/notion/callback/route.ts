@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { setNotionSession } from '@/lib/notion/session'
+import { errorMessage, sendAlert } from '@/lib/alert'
 
 const NONCE_COOKIE = 'notion_oauth_nonce'
 
@@ -36,6 +37,12 @@ export async function GET(request: NextRequest) {
   cookieStore.delete(NONCE_COOKIE)
 
   if (!stateNonce || !nonceCookie?.value || stateNonce !== nonceCookie.value) {
+    await sendAlert({
+      key: 'notion-callback-state',
+      title: 'Notion 連線失敗：狀態不符',
+      detail: 'Notion 回傳的驗證碼與瀏覽器 cookie 不一致',
+      fix: '通常是過期分頁，連續出現才需要查',
+    })
     const redirectBase = new URL(returnUrl, request.nextUrl.origin)
     redirectBase.searchParams.set('notion', 'error')
     return NextResponse.redirect(redirectBase.toString())
@@ -79,6 +86,18 @@ export async function GET(request: NextRequest) {
     )
 
     if (!tokenResponse.ok) {
+      let notionError = ''
+      try {
+        notionError = (await tokenResponse.json()).error ?? ''
+      } catch {
+        // The body is not JSON. The status code is enough.
+      }
+      await sendAlert({
+        key: 'notion-token-exchange',
+        title: 'Notion 連線失敗：換取 token',
+        detail: `HTTP ${tokenResponse.status} ${notionError}`.trim(),
+        fix: '到 Notion integration 設定重發 secret，更新 Vercel 的 NOTION_CLIENT_SECRET',
+      })
       redirectBase.searchParams.set('notion', 'error')
       return NextResponse.redirect(redirectBase.toString())
     }
@@ -92,7 +111,13 @@ export async function GET(request: NextRequest) {
 
     redirectBase.searchParams.set('notion', 'connected')
     return NextResponse.redirect(redirectBase.toString())
-  } catch {
+  } catch (caught) {
+    await sendAlert({
+      key: 'notion-callback-crash',
+      title: 'Notion 連線失敗：程式錯誤',
+      detail: errorMessage(caught),
+      fix: '查 Vercel 紀錄與 NOTION_ENCRYPTION_SECRET',
+    })
     redirectBase.searchParams.set('notion', 'error')
     return NextResponse.redirect(redirectBase.toString())
   }

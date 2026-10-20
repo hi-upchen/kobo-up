@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { getNotionSession, clearNotionSession } from '@/lib/notion/session'
 import { isNotionAuthError } from '@/lib/notion/retry'
+import { alertUnexpectedNotionError } from '@/lib/notion/alertUnexpected'
 
 const MAX_IMAGE_SIZE = 20 * 1024 * 1024 // 20MB (Notion single_part limit)
 
@@ -98,6 +99,11 @@ export async function POST(request: NextRequest) {
       )
     }
     console.error('[Notion upload] Image upload failed:', err instanceof Error ? err.message : err)
+    await alertUnexpectedNotionError(err, {
+      key: 'notion-image-crash',
+      title: 'Notion 圖片上傳失敗',
+      fix: '查 Vercel 紀錄 "[Notion upload] Image upload failed"',
+    })
     return NextResponse.json(
       { error: 'Image upload failed' },
       { status: 502 }

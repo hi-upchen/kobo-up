@@ -61,3 +61,17 @@ export async function withNotionRateLimitRetry<T>(fn: () => Promise<T>): Promise
 export function isNotionAuthError(err: unknown): boolean {
   return APIResponseError.isAPIResponseError(err) && err.code === APIErrorCode.Unauthorized
 }
+
+/**
+ * Checks whether the user or their workspace setup caused a Notion error, not a bug or an outage.
+ * Alerting uses this to skip failures the owner cannot fix.
+ */
+export function isUserCausedNotionError(err: unknown): boolean {
+  if (isNotionAuthError(err)) return true
+  return (
+    APIResponseError.isAPIResponseError(err) &&
+    (err.code === APIErrorCode.RateLimited ||
+      err.code === APIErrorCode.ObjectNotFound ||
+      err.code === APIErrorCode.RestrictedResource)
+  )
+}
