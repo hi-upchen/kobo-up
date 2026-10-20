@@ -1,4 +1,7 @@
 import { ErrorService, KoboError, ErrorType } from '../errorService'
+import { reportLayoutError } from '../../utils/reportLayoutError'
+
+jest.mock('../../utils/reportLayoutError')
 
 // Mock console methods
 const mockConsoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -51,12 +54,12 @@ describe('ErrorService', () => {
       expect(mockConsoleError).toHaveBeenCalled()
     })
 
-    it('should handle database query errors', () => {
+    it('should handle database note loading errors', () => {
       const originalError = new Error('SQL syntax error')
-      const result = ErrorService.handleDatabaseError(originalError, 'query')
+      const result = ErrorService.handleDatabaseError(originalError, 'note loading')
 
       expect(result.type).toBe(ErrorType.DATABASE_ERROR)
-      expect(result.message).toContain('Database query failed')
+      expect(result.message).toContain('Database note loading failed')
     })
   })
 
@@ -147,5 +150,27 @@ describe('ErrorService', () => {
       const unknownError = new KoboError('Unknown', 'UNKNOWN_TYPE' as ErrorType)
       expect(ErrorService.getErrorMessage(unknownError)).toBe('Unknown')
     })
+  })
+})
+describe('ErrorService layout error reporting', () => {
+  const reportSpy = reportLayoutError as jest.Mock
+
+  beforeEach(() => {
+    reportSpy.mockClear()
+  })
+
+  it('reports a missing column', () => {
+    ErrorService.handleDatabaseError(new Error('no such column: Foo'), 'book loading')
+    expect(reportSpy).toHaveBeenCalledWith('book loading', 'no such column: Foo')
+  })
+
+  it('reports a missing table', () => {
+    ErrorService.handleDatabaseError(new Error('no such table: Bar'), 'loading')
+    expect(reportSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not report an unrelated error', () => {
+    ErrorService.handleDatabaseError(new Error('file is not a database'), 'initialization')
+    expect(reportSpy).not.toHaveBeenCalled()
   })
 })

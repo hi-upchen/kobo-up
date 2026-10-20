@@ -1,3 +1,5 @@
+import { reportLayoutError, type LayoutOperation } from '../utils/reportLayoutError'
+
 export enum ErrorType {
   DATABASE_ERROR = 'DATABASE_ERROR',
   FILE_ERROR = 'FILE_ERROR',
@@ -34,7 +36,7 @@ export class ErrorService {
   /**
    * Handle database-related errors
    */
-  static handleDatabaseError(error: Error, operation?: string): KoboError {
+  static handleDatabaseError(error: Error, operation?: LayoutOperation): KoboError {
     const koboError = new KoboError(
       `Database ${operation || 'operation'} failed: ${error.message}`,
       ErrorType.DATABASE_ERROR,
@@ -43,6 +45,10 @@ export class ErrorService {
         originalError: error.message
       }
     )
+
+    if (operation && /no such (table|column)/i.test(error.message)) {
+      reportLayoutError(operation, error.message)
+    }
 
     this.logError(koboError)
     return koboError

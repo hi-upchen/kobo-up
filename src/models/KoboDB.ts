@@ -110,6 +110,20 @@ export async function checkIsKoboDB(db: Database): Promise<boolean> {
 }
 
 /**
+ * Read the database layout version from the DbVersion table.
+ * @param db SQLite database connection
+ * @returns The version number, or null if the table is missing or empty
+ */
+export function getDbVersion(db: Database): number | null {
+  try {
+    const value = db.exec('SELECT version FROM DbVersion LIMIT 1')[0]?.values[0]?.[0]
+    return typeof value === 'number' ? value : null
+  } catch {
+    return null
+  }
+}
+
+/**
  * Fetch the Kobo User Identity details from the SQLite database.
  * @param db SQLite database connection
  * @returns KoboUserDetails object or null if no user details found

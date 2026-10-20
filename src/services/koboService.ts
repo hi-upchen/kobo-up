@@ -8,9 +8,11 @@ import {
 } from '../constants/demoConstants'
 import type { MarkupFile } from './markupService'
 import { ErrorService } from './errorService'
+import { reportLayoutError } from '../utils/reportLayoutError'
 import {
   connKoboDB,
   checkIsKoboDB,
+  getDbVersion,
   getBookList,
   getHighlightNAnnotationList,
   getBook,
@@ -86,6 +88,12 @@ export class KoboService {
       // Validate it's actually a Kobo database
       const isKoboDb = await checkIsKoboDB(db)
       if (!isKoboDb) {
+        // A Kobo database with a version but no main tables means the layout changed.
+        // Other SQLite files have no DbVersion table and are not reported.
+        const dbVersion = getDbVersion(db)
+        if (dbVersion !== null) {
+          reportLayoutError('initialization', `content or Bookmark table missing, DbVersion ${dbVersion}`)
+        }
         throw ErrorService.handleFileError(
           'This file does not contain a valid Kobo database structure. Please upload the KoboReader.sqlite file from your Kobo device.'
         )
@@ -642,7 +650,7 @@ export class KoboService {
       const books = await getBookList(this.database)
       return books.length
     } catch (error) {
-      ErrorService.logError(error as Error)
+      ErrorService.handleDatabaseError(error as Error, 'book loading')
       return null
     }
   }
@@ -681,7 +689,7 @@ export class KoboService {
       const book = await getBook(this.database, contentId)
       return book || null
     } catch (error) {
-      ErrorService.logError(error as Error)
+      ErrorService.handleDatabaseError(error as Error, 'book loading')
       return null
     }
   }
@@ -698,7 +706,7 @@ export class KoboService {
       const annotations = await getHighlightNAnnotationList(this.database, contentId)
       return annotations || []
     } catch (error) {
-      ErrorService.logError(error as Error)
+      ErrorService.handleDatabaseError(error as Error, 'highlight loading')
       return []
     }
   }
@@ -715,7 +723,7 @@ export class KoboService {
       const chapters = await getChaptersWithNotes(this.database, contentId)
       return chapters || []
     } catch (error) {
-      ErrorService.logError(error as Error)
+      ErrorService.handleDatabaseError(error as Error, 'note loading')
       return []
     }
   }

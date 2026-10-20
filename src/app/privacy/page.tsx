@@ -48,6 +48,10 @@ export default function PrivacyPage() {
         stores your books, highlights, or reading history.
       </Text>
       <Text className="mt-4">
+        If reading fails because the Kobo database layout looks unfamiliar, your browser sends
+        the error message to the developer, with no file content and no file name.
+      </Text>
+      <Text className="mt-4">
         This is the default behavior for everyone. The two features below are the only
         exceptions, and both require you to take an explicit action first.
       </Text>
@@ -82,7 +86,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <Text>
-            <Strong>Notification:</Strong> uploading triggers an automatic email to the
+            <Strong>Notification:</Strong> uploading triggers an automatic email and Telegram message to the
             developer containing the file&apos;s storage URL and the upload timestamp.
           </Text>
         </li>
