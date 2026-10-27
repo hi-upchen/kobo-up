@@ -72,7 +72,7 @@ describe('generateTextContent', () => {
     const chapters: IBookChapter[] = [
       { contentId: 'c1', title: 'Part One', depth: 1, notes: [] },
       { contentId: 'c2', title: 'Section 1.1', depth: 2, notes: [] },
-      { contentId: 'c3', title: 'Subsection 1.1.1', depth: 3, notes: [] },
+      { contentId: 'c3', title: 'Subsection 1.1.1', depth: 3, notes: [{ bookmarkId: '1', text: 'Deep highlight' }] },
     ] as IBookChapter[];
 
     const result = generateTextContent(mockBook, chapters);
@@ -82,7 +82,7 @@ describe('generateTextContent', () => {
     expect(result).toContain('    Subsection 1.1.1\n');
   });
 
-  it('renders a book with no notes as just the title, author, and chapter outline', () => {
+  it('renders a book with no notes as just the title and author', () => {
     const chapters: IBookChapter[] = [
       { contentId: 'c1', title: 'Chapter 1', depth: 1, notes: [] },
       { contentId: 'c2', title: 'Chapter 2', depth: 1, notes: [] },
@@ -90,11 +90,62 @@ describe('generateTextContent', () => {
 
     const result = generateTextContent(mockBook, chapters);
 
+    expect(result).toBe('Test Book\nTest Author\n\n');
+  });
+
+  it('leaves out chapters that have no notes', () => {
+    const chapters: IBookChapter[] = [
+      { contentId: 'c1', title: 'Empty Chapter', depth: 1, notes: [] },
+      { contentId: 'c2', title: 'Noted Chapter', depth: 1, notes: [{ bookmarkId: '1', text: 'A highlight' }] },
+      { contentId: 'c3', title: 'Another Empty Chapter', depth: 1, notes: [] },
+    ] as IBookChapter[];
+
+    const result = generateTextContent(mockBook, chapters);
+
     expect(result).toBe(
       'Test Book\n' +
       'Test Author\n\n' +
-      'Chapter 1\n' +
-      'Chapter 2\n'
+      'Noted Chapter\n\n' +
+      '  A highlight\n\n'
+    );
+  });
+
+  it('keeps a parent chapter heading when one of its subchapters has notes', () => {
+    const chapters: IBookChapter[] = [
+      { contentId: 'p1', title: 'Part One', depth: 1, notes: [] },
+      { contentId: 'c1', title: 'Empty Section', depth: 2, notes: [] },
+      { contentId: 'c2', title: 'Noted Section', depth: 2, notes: [{ bookmarkId: '1', text: 'A highlight' }] },
+      { contentId: 'p2', title: 'Part Two', depth: 1, notes: [] },
+      { contentId: 'c3', title: 'Empty Section Two', depth: 2, notes: [] },
+    ] as IBookChapter[];
+
+    const result = generateTextContent(mockBook, chapters);
+
+    expect(result).toBe(
+      'Test Book\n' +
+      'Test Author\n\n' +
+      'Part One\n' +
+      '  Noted Section\n\n' +
+      '    A highlight\n\n'
+    );
+  });
+
+  it('gives unchanged output when every chapter has notes', () => {
+    const chapters: IBookChapter[] = [
+      { contentId: 'c1', title: 'Chapter 1', depth: 1, notes: [{ bookmarkId: '1', text: 'First' }] },
+      { contentId: 'c2', title: 'Section 1.1', depth: 2, notes: [{ bookmarkId: '2', text: 'Second', annotation: 'Thought' }] },
+    ] as IBookChapter[];
+
+    const result = generateTextContent(mockBook, chapters);
+
+    expect(result).toBe(
+      'Test Book\n' +
+      'Test Author\n\n' +
+      'Chapter 1\n\n' +
+      '  First\n\n' +
+      '  Section 1.1\n\n' +
+      '    Second\n' +
+      '    Note: Thought\n\n'
     );
   });
 

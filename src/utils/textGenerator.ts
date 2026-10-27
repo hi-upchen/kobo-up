@@ -7,7 +7,7 @@
  */
 import { IBook, IBookChapter } from '@/types/kobo'
 import { getColorEmoji } from './koboColors'
-import { downloadFile } from './markdownGenerator'
+import { downloadFile, filterChaptersWithNotes } from './markdownGenerator'
 
 /**
  * Builds the full plain-text export for a single book.
@@ -16,7 +16,7 @@ import { downloadFile } from './markdownGenerator'
  * @param bookChapterAndNotes - Chapters in reading order, each already carrying its attached notes/highlights.
  * @returns Plain-text content: book title, author, then one line per chapter
  *   (indented two spaces per nesting depth) followed by its highlights and
- *   notes. Chapters without notes render as a bare title line. Highlight
+ *   notes. Chapters without notes are left out, unless a subchapter has notes. Highlight
  *   text and annotations are flattened to a single line each.
  */
 export const generateTextContent = (book: IBook, bookChapterAndNotes: IBookChapter[]): string => {
@@ -25,7 +25,7 @@ export const generateTextContent = (book: IBook, bookChapterAndNotes: IBookChapt
   content += `${book.bookTitle}\n`
   content += `${book.author}\n\n`
 
-  bookChapterAndNotes.forEach((chapter) => {
+  filterChaptersWithNotes(bookChapterAndNotes).forEach((chapter) => {
     const indent = '  '.repeat(Math.max(chapter.depth - 1, 0))
     content += `${indent}${chapter.title}\n`
 
