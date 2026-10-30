@@ -35,7 +35,7 @@ describe('sitemap', () => {
     }
   });
 
-  it('lists exactly six pages', () => {
+  it('lists exactly six pages when content/articles has no articles', () => {
     const result = sitemap();
     expect(result).toHaveLength(6);
   });
