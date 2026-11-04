@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
 import { Text, TextLink } from '@/components/text'
+import { ProCheckoutButton } from '@/components/ProCheckoutButton'
 import FAQ from '@/app/components/FAQ'
 import { getUploadInstruction, type FolderPickerSupport } from './utils/uploadInstruction'
 import type { KoboDbLoadMethod } from '@/types/kobo'
@@ -507,6 +508,22 @@ export default function LandingPage() {
               </Text>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Pro announcement */}
+      <div className="py-12 sm:py-16">
+        <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
+          <Heading>Kobo Note Up Pro is coming</Heading>
+          <Text className="mt-4 text-lg leading-8">
+            A one-time US$19 early-bird lifetime license, with no subscription. Pro will unlock whole-library batch export, handwritten-notes export, and future new features. No Pro feature is locked yet, and one-book export stays free.
+          </Text>
+          <div className="mt-6">
+            <ProCheckoutButton location="landing" />
+          </div>
+          <Text className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+            <TextLink href="/pro">Read the details</TextLink>
+          </Text>
         </div>
       </div>
 
