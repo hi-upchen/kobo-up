@@ -7,6 +7,7 @@ import { NavigationService } from '@/services/navigationService'
 import { ErrorService } from '@/services/errorService'
 import { pushToDataLayer } from '@/utils/gtm'
 import { DatabaseSelector } from './components/DatabaseSelector'
+import { FileLocationHelp } from './components/FileLocationHelp'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { ErrorMessage } from '@/components/ErrorMessage'
 import { HeroHeading, Heading, Subheading } from '@/components/heading'
@@ -409,6 +410,8 @@ export default function LandingPage() {
               )}
             />
           )}
+
+          {!isLoading && <FileLocationHelp />}
 
           {/* Secondary, no-signup path for visitors without their Kobo handy
               (mobile, at work, etc.) — deliberately styled as a plain text
