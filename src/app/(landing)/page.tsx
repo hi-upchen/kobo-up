@@ -15,6 +15,7 @@ import { Text, TextLink } from '@/components/text'
 import { ProCheckoutButton } from '@/components/ProCheckoutButton'
 import FAQ from '@/app/components/FAQ'
 import { getUploadInstruction, type FolderPickerSupport } from './utils/uploadInstruction'
+import { buildWebApplicationJsonLd, serializeJsonLd } from './utils/webApplicationJsonLd'
 import type { KoboDbLoadMethod } from '@/types/kobo'
 
 export default function LandingPage() {
@@ -237,6 +238,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildWebApplicationJsonLd()) }}
+      />
       {/* Hero Section */}
       <div className="py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
