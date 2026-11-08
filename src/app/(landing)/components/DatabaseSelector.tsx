@@ -81,7 +81,7 @@ export function DatabaseSelector({
             Click here and Select the <Strong>.kobo folder</Strong> on your Kobo device
           </Text>
           <Text className="mt-3 block text-xs text-gray-400 dark:text-gray-500">
-            Can&apos;t see the .kobo folder? Press <Strong>⌘+Shift+.</Strong> on Mac. On Windows 11 choose <Strong>View → Show → Hidden items</Strong>. On Windows 10 choose <Strong>View → Hidden items</Strong>
+            Can&apos;t see the .kobo folder? Press <Strong>⌘+Shift+.</Strong> on Mac. On Windows 11 choose <Strong>View → Show → Hidden items</Strong>. On Windows 10 choose <Strong>View → Options → View</Strong>, then &quot;Show hidden files, folders, and drives&quot;
           </Text>
           <input
             ref={(el) => {

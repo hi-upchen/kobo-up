@@ -182,7 +182,7 @@ export default function KoboExportNotWorkingGuide() {
             folder, so select the <code>.kobo</code> folder inside your Kobo device instead. That
             folder is hidden by default — on Mac, press <code>⌘+Shift+.</code> while the file
             picker is open to reveal it; on Windows 11, choose View → Show → Hidden items,
-            and on Windows 10, choose View → Hidden items.
+            and on Windows 10, choose View → Options → View, then &quot;Show hidden files, folders, and drives&quot;.
           </Text>
         </li>
         <li>

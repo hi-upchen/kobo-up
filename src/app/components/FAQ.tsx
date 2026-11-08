@@ -27,7 +27,7 @@ const faqs = [
   {
     question: "Which browsers support Kobo export functionality?",
     answer:
-      "All modern browsers are supported. Chrome and Edge offer the smoothest experience with direct folder access. Firefox and Safari also work — just select the .kobo folder on your device (on Mac, press ⌘+Shift+.; on Windows 11, choose View → Show → Hidden items; on Windows 10, choose View → Hidden items).",
+      "All modern browsers are supported. Chrome and Edge offer the smoothest experience with direct folder access. Firefox and Safari also work — just select the .kobo folder on your device (on Mac, press ⌘+Shift+.; on Windows 11, choose View → Show → Hidden items; on Windows 10, choose View → Options → View, then \"Show hidden files, folders, and drives\").",
   },
   {
     question: "Do I need to install software to export Kobo notes?",
