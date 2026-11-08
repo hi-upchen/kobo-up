@@ -181,8 +181,8 @@ export default function KoboExportNotWorkingGuide() {
             <Strong>Firefox or Safari:</Strong> these browsers cannot read a USB drive&apos;s root
             folder, so select the <code>.kobo</code> folder inside your Kobo device instead. That
             folder is hidden by default — on Mac, press <code>⌘+Shift+.</code> while the file
-            picker is open to reveal it; on Windows, enable &quot;Show hidden files&quot; in
-            folder options, or use the Ctrl+H trick some file dialogs support.
+            picker is open to reveal it; on Windows 11, choose View → Show → Hidden items,
+            and on Windows 10, choose View → Options → View, then &quot;Show hidden files, folders, and drives&quot;.
           </Text>
         </li>
         <li>

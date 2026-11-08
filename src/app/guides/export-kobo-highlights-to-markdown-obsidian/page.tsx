@@ -129,9 +129,8 @@ export default function ExportKoboHighlightsToMarkdownObsidianGuide() {
         </li>
         <li>
           <Text>
-            <Strong>Windows:</Strong> enable &quot;Show hidden files&quot; in File Explorer&apos;s
-            folder options before opening the file picker, or try the <Code>Ctrl+H</Code> shortcut
-            some file dialogs support for the same toggle.
+            <Strong>Windows:</Strong> in the file picker, choose <Strong>View → Show → Hidden items</Strong> on
+            Windows 11, or <Strong>View → Options → View</Strong> then &quot;Show hidden files, folders, and drives&quot; on Windows 10.
           </Text>
         </li>
       </ul>

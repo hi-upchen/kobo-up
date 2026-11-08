@@ -136,7 +136,7 @@ Kobo's built-in export only works with books purchased from their store. Sideloa
 Absolutely safe! We only READ your database, never write to it. Your Kobo device remains untouched. All processing happens in your browser.
 
 ### How do I use this with Firefox or Safari?
-Firefox and Safari are fully supported! When prompted, select the `.kobo` folder inside your Kobo device (press ⌘+Shift+. on Mac or Ctrl+H on Windows to show hidden folders). Chrome and Edge can select the root folder directly.
+Firefox and Safari are fully supported! When prompted, select the `.kobo` folder inside your Kobo device (to show hidden folders, press ⌘+Shift+. on Mac; on Windows 11 choose View → Show → Hidden items; on Windows 10 choose View → Options → View, then "Show hidden files, folders, and drives"). Chrome and Edge can select the root folder directly.
 
 ### Can I export highlights from specific books only?
 Yes! You can browse your library and export individual books or export your entire library at once.
