@@ -522,9 +522,9 @@ export default function LandingPage() {
       {/* Pro announcement */}
       <div className="py-12 sm:py-16">
         <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-          <Heading>Kobo Note Up Pro is coming</Heading>
+          <Heading>Kobo Note Up Pro</Heading>
           <Text className="mt-4 text-lg leading-8">
-            A one-time US$19 early-bird lifetime license, with no subscription. Pro will unlock whole-library batch export, handwritten-notes export, and future new features. No Pro feature is locked yet, and one-book export stays free.
+            A one-time US$19 early-bird lifetime license, with no subscription. Pro unlocks bulk export of more than 10 books, handwritten-notes export, and future new features. Pro limits start on 2026-11-19. Until then everything stays free, and one-book export stays free forever.
           </Text>
           <div className="mt-6">
             <ProCheckoutButton location="landing" />
