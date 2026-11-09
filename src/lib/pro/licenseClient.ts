@@ -161,12 +161,17 @@ export function useHasProLicense(): boolean {
   return hasLicense
 }
 
-/** Activates in this browser, reports analytics and updates every consumer. */
+/**
+ * Activates in this browser, reports analytics and updates every consumer.
+ *
+ * Sends one event per attempt. The failure event carries only a reason code.
+ * Network errors send nothing, because the server never judged the key.
+ */
 export async function activateInBrowser(rawKey: string): Promise<ActivateOutcome> {
   const outcome = await activateLicenseKey(rawKey, browserDeps())
   if (outcome.ok) pushToDataLayer({ event: 'pro_license_activated' })
   else if (outcome.code === 'invalid' || outcome.code === 'malformed_key' || outcome.code === 'limit_reached') {
-    pushToDataLayer({ event: 'pro_license_invalid', reason: outcome.code })
+    pushToDataLayer({ event: 'pro_license_failed', reason: outcome.code })
   }
   notify()
   return outcome
