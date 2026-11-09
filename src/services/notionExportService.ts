@@ -141,18 +141,21 @@ async function uploadImageToNotion(blob: Blob, filename: string): Promise<string
 /**
  * Export a book (with chapters and markup images) to a Notion page.
  * Images are uploaded individually first, then bookData is sent as JSON.
+ * Pass `includeHandwriting: false` to leave handwritten annotations out (Pro only).
  */
 export async function exportBookToNotion(
   book: IBook,
   chapters: IBookChapter[],
   parentPageId: string,
-  onProgress?: (stage: string, current: number, total: number) => void
+  onProgress?: (stage: string, current: number, total: number) => void,
+  options: { includeHandwriting?: boolean } = {}
 ): Promise<NotionExportResult> {
-  // 1. Collect all markup bookmarkIds
+  // 1. Collect all markup bookmarkIds. Without the handwriting permission
+  // the list stays empty, so the page gets a text placeholder per annotation.
   const markupIds: string[] = []
   for (const chapter of chapters) {
     for (const note of chapter.notes) {
-      if (note.type === 'markup') {
+      if (options.includeHandwriting !== false && note.type === 'markup') {
         markupIds.push(note.bookmarkId)
       }
     }

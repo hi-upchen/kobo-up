@@ -11,6 +11,9 @@ import {
 import { KoboService } from '@/services/koboService';
 import { exportBookToNotion, fetchNotionPages, NotionPage, NotionReauthRequiredError } from '@/services/notionExportService';
 import { pushToDataLayer } from '@/utils/gtm';
+import { UpgradeDialog } from '@/components/UpgradeDialog';
+import { useHasProLicense } from '@/lib/pro/licenseClient';
+import { canExportHandwriting } from '@/lib/pro/limits';
 
 import { DonationCard } from '@/components/DonationCard'
 import { NotesHeader } from './components/NotesHeader'
@@ -30,6 +33,7 @@ interface PagePickerState {
   pages: NotionPage[]
   book: IBook
   chapters: IBookChapter[]
+  includeHandwriting: boolean
 }
 
 function NotesPageContent() {
@@ -52,6 +56,9 @@ function NotesPageContent() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [pagePicker, setPagePicker] = useState<PagePickerState | null>(null);
   const [pageSearch, setPageSearch] = useState('');
+  const hasProLicense = useHasProLicense();
+  /** Set when a free user tries to send handwritten annotations to Notion. */
+  const [handwritingPrompt, setHandwritingPrompt] = useState<{ book: IBook; chapters: IBookChapter[] } | null>(null);
 
   const hasHandledRedirect = useRef(false);
 
@@ -232,8 +239,16 @@ function NotesPageContent() {
     maybeShowPostExportDonation();
   };
 
-  const handleExportNotion = useCallback(async (book: IBook, chapters: IBookChapter[]) => {
+  const handleExportNotion = useCallback(async (book: IBook, chapters: IBookChapter[], includeHandwriting = true) => {
     if (isExportingNotion) return;
+
+    // Handwritten-annotation export is Pro. Free users see an upgrade prompt,
+    // with the option to export the text without the handwriting.
+    const hasHandwriting = chapters.some(c => c.notes.some(n => n.type === 'markup'));
+    if (includeHandwriting && hasHandwriting && !canExportHandwriting(hasProLicense)) {
+      setHandwritingPrompt({ book, chapters });
+      return;
+    }
 
     setToast({ type: 'loading', message: 'Loading Notion pages...' });
 
@@ -247,7 +262,7 @@ function NotesPageContent() {
       }
 
       // Show page picker
-      setPagePicker({ pages, book, chapters });
+      setPagePicker({ pages, book, chapters, includeHandwriting });
     } catch (error) {
       console.error('Notion pages error:', error);
       if (error instanceof NotionReauthRequiredError) {
@@ -260,7 +275,7 @@ function NotesPageContent() {
       }
       setToast({ type: 'error', message: 'Failed to load Notion pages.' });
     }
-  }, [isExportingNotion]);
+  }, [isExportingNotion, hasProLicense]);
 
   /**
    * Sends the currently picked book to the chosen Notion page and reports
@@ -273,7 +288,7 @@ function NotesPageContent() {
    */
   const startNotionExport = useCallback(async (parentPageId: string) => {
     if (!pagePicker) return;
-    const { book, chapters } = pagePicker;
+    const { book, chapters, includeHandwriting } = pagePicker;
     setPagePicker(null);
 
     setIsExportingNotion(true);
@@ -283,7 +298,7 @@ function NotesPageContent() {
       const result = await exportBookToNotion(book, chapters, parentPageId, (stage, current, total) => {
         const count = total > 1 ? ` (${current}/${total})` : '';
         setToast({ type: 'loading', message: `${stage}${count}` });
-      });
+      }, { includeHandwriting });
 
       if (result.success) {
         pushToDataLayer({ event: 'notion_export_complete', format: 'notion', scope: 'single_book' });
@@ -394,6 +409,19 @@ function NotesPageContent() {
           </div>
         );
       })()}
+
+      <UpgradeDialog
+        limit={handwritingPrompt ? 'handwriting' : null}
+        onClose={() => setHandwritingPrompt(null)}
+        alternative={{
+          label: 'Export without handwriting',
+          onClick: () => {
+            const pending = handwritingPrompt;
+            setHandwritingPrompt(null);
+            if (pending) handleExportNotion(pending.book, pending.chapters, false);
+          },
+        }}
+      />
 
       {toast && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">

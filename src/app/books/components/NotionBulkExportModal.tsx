@@ -21,11 +21,14 @@ import type { IBook } from '@/types/kobo'
 import { KoboService } from '@/services/koboService'
 import {
   checkNotionConnection,
+  exportBookToNotion,
   fetchNotionPages,
   NotionReauthRequiredError,
   type NotionPage,
 } from '@/services/notionExportService'
 import { runBulkNotionExport, type BulkExportSummary } from '@/services/notionBulkExportService'
+import { useHasProLicense } from '@/lib/pro/licenseClient'
+import { canExportHandwriting } from '@/lib/pro/limits'
 import { pushToDataLayer } from '@/utils/gtm'
 import { DonationCard } from '@/components/DonationCard'
 import { NotionPagePicker } from '@/components/NotionPagePicker'
@@ -65,6 +68,7 @@ function LoadingSpinner() {
 
 export function NotionBulkExportModal({ books, scope, resumedAfterConnect = false, onClose }: NotionBulkExportModalProps) {
   const [step, setStep] = useState<Step>({ name: 'checking_connection' })
+  const includeHandwriting = canExportHandwriting(useHasProLicense())
   const [bookStatuses, setBookStatuses] = useState<BulkExportBookStatus[]>([])
   const [settledCount, setSettledCount] = useState(0)
   const [cancelRequested, setCancelRequested] = useState(false)
@@ -164,6 +168,9 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
 
       const summary = await runBulkNotionExport(books, parentPageId, () => cancelRequestedRef.current, {
         loadChapters: (contentId) => KoboService.loadBookChaptersWithNotes(contentId),
+        // Handwritten annotations are Pro. Without a license they are left out.
+        exportBook: (book, chapters, pageId, onProgress) =>
+          exportBookToNotion(book, chapters, pageId, onProgress, { includeHandwriting }),
         onBookStart: (book) => {
           setBookStatuses((prev) =>
             prev.map((s) => (s.contentId === book.contentId ? { ...s, state: 'exporting' } : s))
@@ -195,7 +202,7 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
 
       setStep({ name: 'summary', summary })
     },
-    [books, scope]
+    [books, scope, includeHandwriting]
   )
 
   const handleCancel = () => {
@@ -214,7 +221,7 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
       <NotionPagePicker
         isOpen
         pages={step.pages}
-        description={`${books.length} book${books.length !== 1 ? 's' : ''} will be exported as sub-pages under the page you choose.`}
+        description={`${books.length} book${books.length !== 1 ? 's' : ''} will be exported as sub-pages under the page you choose.${includeHandwriting ? '' : ' Handwritten annotations are a Pro feature, so they are left out.'}`}
         onSelect={handleStartExport}
         onCancel={onClose}
       />

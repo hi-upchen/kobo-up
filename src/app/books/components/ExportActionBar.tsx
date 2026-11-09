@@ -10,6 +10,9 @@ import { Dialog, DialogTitle, DialogDescription, DialogBody, DialogActions } fro
 import { NotionBulkExportModal } from './NotionBulkExportModal'
 import { NotionOAuthReturnHandler } from './NotionOAuthReturnHandler'
 import type { BulkExportScope } from './notionBulkExportSelection'
+import { UpgradeDialog } from '@/components/UpgradeDialog'
+import { useHasProLicense } from '@/lib/pro/licenseClient'
+import { canBulkExport } from '@/lib/pro/limits'
 
 interface ExportActionBarProps {
   books: IBook[]
@@ -35,6 +38,8 @@ export function ExportActionBar({
   const [exportMode, setExportMode] = useState<'all' | 'selected'>('all')
   const [notionModal, setNotionModal] = useState<NotionModalState | null>(null)
   const [oauthError, setOauthError] = useState(false)
+  const hasProLicense = useHasProLicense()
+  const [bulkLimitShown, setBulkLimitShown] = useState(false)
   /** Number of books in the just-completed file export; non-null shows the success confirmation. */
   const [fileExportSuccessCount, setFileExportSuccessCount] = useState<number | null>(null)
 
@@ -47,12 +52,21 @@ export function ExportActionBar({
     setIsSelectionMode(selectedBooks.size > 0)
   }, [selectedBooks.size])
 
+  /** Returns true when a bulk export of this many books may run; otherwise shows the upgrade prompt. */
+  const allowBulk = (bookCount: number): boolean => {
+    if (canBulkExport(bookCount, hasProLicense)) return true
+    setBulkLimitShown(true)
+    return false
+  }
+
   const handleExportAll = () => {
+    if (!allowBulk(booksWithContent.length)) return
     setExportMode('all')
     setIsModalOpen(true)
   }
 
   const handleExportSelected = () => {
+    if (!allowBulk(selectedBooks.size)) return
     setExportMode('selected')
     setIsModalOpen(true)
   }
@@ -110,12 +124,14 @@ export function ExportActionBar({
 
   /** Opens the bulk Notion export flow for every book with notes/highlights (the "export all" scope). */
   const handleExportNotionAll = () => {
+    if (!allowBulk(booksWithContent.length)) return
     setOauthError(false)
     setNotionModal({ books: booksWithContent, scope: 'all_books', resumedAfterConnect: false })
   }
 
   /** Opens the bulk Notion export flow for the currently selected books. */
   const handleExportNotionSelected = () => {
+    if (!allowBulk(selectedBooks.size)) return
     setOauthError(false)
     setNotionModal({
       books: books.filter(book => selectedBooks.has(book.contentId)),
@@ -218,6 +234,8 @@ export function ExportActionBar({
           <button onClick={() => setOauthError(false)} className="text-xs underline">Dismiss</button>
         </div>
       )}
+
+      <UpgradeDialog limit={bulkLimitShown ? 'bulk' : null} onClose={() => setBulkLimitShown(false)} />
 
       <ExportOptionsModal
         isOpen={isModalOpen}
