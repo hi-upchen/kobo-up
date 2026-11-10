@@ -31,6 +31,29 @@ export class KoboService {
    */
   private static hasFiredLoadedEvent = false
 
+  /** sessionStorage key that lets the once-per-session gate survive a full reload. */
+  private static readonly LOADED_EVENT_SESSION_KEY = 'kobo_loaded_event_fired'
+
+  private static readSessionLoadedFlag(): boolean {
+    try {
+      return window.sessionStorage.getItem(this.LOADED_EVENT_SESSION_KEY) === '1'
+    } catch {
+      return false
+    }
+  }
+
+  private static writeSessionLoadedFlag(fired: boolean): void {
+    try {
+      if (fired) {
+        window.sessionStorage.setItem(this.LOADED_EVENT_SESSION_KEY, '1')
+      } else {
+        window.sessionStorage.removeItem(this.LOADED_EVENT_SESSION_KEY)
+      }
+    } catch {
+      // Storage is blocked (private mode). The in-memory gate still works.
+    }
+  }
+
   /**
    * Check if the provided file is a valid Kobo database file
    */
@@ -483,6 +506,7 @@ export class KoboService {
       // Reset the kobodb_loaded gate so a subsequent upload is tracked as a
       // new session transition instead of being silently skipped.
       this.hasFiredLoadedEvent = false
+      this.writeSessionLoadedFlag(false)
 
       // A cleared library is no longer demo data by definition.
       this.clearDemoFlag()
@@ -668,12 +692,19 @@ export class KoboService {
    * The gate resets in `clearStoredData()`, so re-uploading a database after
    * clearing counts as a new transition.
    *
+   * The flag is also saved in sessionStorage, so a full page refresh in the
+   * same tab session does not count again. A blocked sessionStorage falls
+   * back to the in-memory flag.
+   *
    * @returns True on the first call this session; false on every subsequent
    *   call until `clearStoredData()` runs.
    */
   static consumeLoadedTransition(): boolean {
     if (this.hasFiredLoadedEvent) return false
     this.hasFiredLoadedEvent = true
+    if (typeof window === 'undefined') return true
+    if (this.readSessionLoadedFlag()) return false
+    this.writeSessionLoadedFlag(true)
     return true
   }
 
