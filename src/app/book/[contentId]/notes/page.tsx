@@ -16,6 +16,7 @@ import { useHasProLicense } from '@/lib/pro/licenseClient';
 import { canExportHandwriting } from '@/lib/pro/limits';
 
 import { DonationCard } from '@/components/DonationCard'
+import { ExportFeedbackQuestion } from '@/components/ExportFeedbackQuestion'
 import { NotesHeader } from './components/NotesHeader'
 import { NotesSection } from './components/NotesSection'
 import { generateMarkdownContent, downloadMarkdownFile } from '@/utils/markdownGenerator'
@@ -512,6 +513,7 @@ function NotesPageContent() {
               </svg>
             </button>
             <DonationCard variant="compact" placement="donation_card_post_export_notes" />
+            <div className="px-4 pb-4"><ExportFeedbackQuestion /></div>
           </div>
         </div>
       )}

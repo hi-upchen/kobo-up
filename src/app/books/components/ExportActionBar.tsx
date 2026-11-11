@@ -6,6 +6,7 @@ import { ExportOptionsModal, type ExportFormat, type ExportStructure } from './E
 import { ExportService } from '@/services/exportService'
 import { pushToDataLayer } from '@/utils/gtm'
 import { DonationCard } from '@/components/DonationCard'
+import { ExportFeedbackQuestion } from '@/components/ExportFeedbackQuestion'
 import { Dialog, DialogTitle, DialogDescription, DialogBody, DialogActions } from '@/components/dialog'
 import { NotionBulkExportModal } from './NotionBulkExportModal'
 import { NotionOAuthReturnHandler } from './NotionOAuthReturnHandler'
@@ -262,6 +263,7 @@ export function ExportActionBar({
           </DialogDescription>
           <DialogBody>
             <DonationCard variant="compact" placement="donation_card_bulk_file_success" />
+            <ExportFeedbackQuestion />
           </DialogBody>
           <DialogActions>
             <button
