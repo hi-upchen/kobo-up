@@ -14,7 +14,7 @@ import { POLAR_CUSTOMER_PORTAL_URL } from '@/lib/pro/polarConfig'
 export const metadata: Metadata = {
   title: 'Kobo Note Up Pro — Early-bird Lifetime License',
   description:
-    'Kobo Note Up Pro is a one-time US$19 lifetime license. Free export stays free. Pro limits start on 2026-11-19. Until then everything stays free.',
+    'Kobo Note Up Pro is a one-time US$19 lifetime license. Exporting one book at a time and up to 10 books at once stays free. Pro limits started on 2026-11-19.',
   alternates: {
     canonical: '/pro',
   },
@@ -35,8 +35,8 @@ export default function ProPage() {
 
       <div className="mt-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-zinc-800">
         <Text>
-          <Strong>Pro limits start on 2026-11-19.</Strong> Until 2026-11-19 everything stays free.
-          From that day, the Pro features below need a license key.
+          <Strong>Pro limits started on 2026-11-19.</Strong> The Pro features below need a license key.
+          Everything under &quot;What stays free&quot; needs no key and no account.
         </Text>
       </div>
 
@@ -44,11 +44,11 @@ export default function ProPage() {
         What stays free
       </Subheading>
       <Text className="mt-4">
-        Exporting one book at a time stays free forever, in every format.
+        Exporting one book at a time stays free forever, in every format. Handwritten (stylus) annotations are the one exception. They are left out of free Notion exports.
       </Text>
       <ul className="mt-4 list-disc space-y-2 pl-6">
         <li>
-          <Text>Export one book at a time to Markdown, plain text, or Notion.</Text>
+          <Text>Export one book at a time to Markdown, plain text, or Notion. Handwriting is not included.</Text>
         </li>
         <li>
           <Text>Bulk export of up to 10 books at once, to files or to Notion.</Text>
