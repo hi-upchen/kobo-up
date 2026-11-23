@@ -221,7 +221,7 @@ export function NotionBulkExportModal({ books, scope, resumedAfterConnect = fals
       <NotionPagePicker
         isOpen
         pages={step.pages}
-        description={`${books.length} book${books.length !== 1 ? 's' : ''} will be exported as sub-pages under the page you choose.${includeHandwriting ? '' : ' Handwritten annotations are a Pro feature, so they are left out.'}`}
+        description={`${books.length} book${books.length !== 1 ? 's' : ''} will be exported as sub-pages under the page you choose.${includeHandwriting ? '' : ' If a book has handwritten annotations, they are left out. Exporting them is a Pro feature.'}`}
         onSelect={handleStartExport}
         onCancel={onClose}
       />
